@@ -4,6 +4,7 @@ import { getAccessToken, usePrivy } from "@privy-io/react-auth";
 import Head from "next/head";
 import Link from "next/link";
 import { Logo } from "../components/logo";
+// import CardCreationForm from "../components/card-creation-form";
 
 async function verifyToken() {
   const url = "/api/verify";
@@ -225,14 +226,18 @@ export default function DashboardPage() {
                     </pre>
                   </details>
                 </div>
-              )}
-
-              <div className="bf-panel">
+              )}              <div className="bf-panel">
                 <h3 className="text-xl font-bold mb-4">User Information</h3>
                 <pre className="bg-gray-800 p-4 text-xs sm:text-sm rounded-md overflow-auto bf-mono">
                   {JSON.stringify(user, null, 2)}
                 </pre>
               </div>
+
+              {/* Card Creation Section 
+                <div className="mt-8">
+                  <h2 className="text-2xl font-bold mb-6">Manage Your BCards</h2>
+                  <CardCreationForm walletAddress={wallet?.address} userEmail={email?.address} />
+                </div> */}
             </main>
           </>
         ) : null}

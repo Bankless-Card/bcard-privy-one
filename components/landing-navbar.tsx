@@ -13,33 +13,31 @@ export default function LandingNavbar() {
                 <Logo fontColor="white" />
               </Link>
             </div>
-            <div className="ml-6 hidden md:block">
-              <Link
-                href="/login"
-                className="bf-nav-item"
-              >
-                Login
-              </Link>
-            </div>
           </div>
           <div className="hidden md:flex md:items-center md:space-x-6">
             <Link
-              href="#features"
+              href="/login"
               className="bf-nav-item"
             >
-              Features
+              Login
             </Link>
             <Link
-              href="#about"
+              href="#mission"
               className="bf-nav-item"
             >
-              About
+              Mission
             </Link>
             <Link
-              href="#contact"
+              href="#participate"
               className="bf-nav-item"
             >
-              Contact
+              Participate
+            </Link>
+            <Link
+              href="#sponsors"
+              className="bf-nav-item"
+            >
+              Sponsors
             </Link>
           </div>
           
