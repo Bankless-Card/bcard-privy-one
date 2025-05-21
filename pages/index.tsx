@@ -1,64 +1,127 @@
-import Portal from "../components/graphics/portal";
-import { useLogin } from "@privy-io/react-auth";
+import LandingPage from "../components/landing-page";
 import { PrivyClient } from "@privy-io/server-auth";
 import { GetServerSideProps } from "next";
+import { usePrivy } from "@privy-io/react-auth";
+import Link from "next/link";
+import React from "react";
 import Head from "next/head";
-import { useRouter } from "next/router";
+import { Logo } from "../components/logo";
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   const cookieAuthToken = req.cookies["privy-token"];
 
   // If no cookie is found, skip any further checks
-  if (!cookieAuthToken) return { props: {} };
+  if (!cookieAuthToken) return { props: { isAuthenticated: false } };
 
   const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
   const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
   const client = new PrivyClient(PRIVY_APP_ID!, PRIVY_APP_SECRET!);
 
   try {
-    const claims = await client.verifyAuthToken(cookieAuthToken);
-    // Use this result to pass props to a page for server rendering or to drive redirects!
-    // ref https://nextjs.org/docs/pages/api-reference/functions/get-server-side-props
-    console.log({ claims });
-
+    await client.verifyAuthToken(cookieAuthToken);
+    // Pass isAuthenticated flag to component instead of redirecting
     return {
-      props: {},
-      redirect: { destination: "/dashboard", permanent: false },
+      props: { isAuthenticated: true },
     };
   } catch (error) {
-    return { props: {} };
+    return { props: { isAuthenticated: false } };
   }
 };
 
-export default function LoginPage() {
-  const router = useRouter();
-  const { login } = useLogin({
-    onComplete: () => router.push("/dashboard"),
-  });
-
+// User welcome component for authenticated users
+function UserWelcome() {
+  const { user, logout } = usePrivy();
+  
   return (
-    <>
+    <div className="bf-theme min-h-screen">
       <Head>
-        <title>Login · Privy</title>
+        <title>Welcome Back · BCard</title>
       </Head>
-
-      <main className="flex min-h-screen min-w-full">
-        <div className="flex bg-privy-light-blue flex-1 p-6 justify-center items-center">
-          <div>
-            <div>
-              <Portal style={{ maxWidth: "100%", height: "auto" }} />
+      
+      <nav className="bg-black py-4">
+        <div className="bf-container">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <Link href="/" className="flex items-center">
+                <span className="bf-flag text-xl mr-2">🏴</span>
+                <Logo fontColor="white" />
+              </Link>
             </div>
-            <div className="mt-6 flex justify-center text-center">
-              <button
-                className="bg-violet-600 hover:bg-violet-700 py-3 px-6 text-white rounded-lg"
-                onClick={login}
+            <div className="flex items-center space-x-4">
+              <Link 
+                href="/dashboard" 
+                className="bf-button"
               >
-                Log in
+                Go to Dashboard
+              </Link>
+              <button
+                onClick={logout}
+                className="bf-button"
+              >
+                Logout
               </button>
             </div>
           </div>
         </div>
+      </nav>
+      
+      <main className="bf-container py-10">
+        <div className="bf-panel">
+          <div className="flex flex-col md:flex-row items-start md:items-center mb-6">
+            <div className="flex-shrink-0 mb-4 md:mb-0">
+              <div className="h-20 w-20 rounded-full bg-gray-800 border-2 border-white flex items-center justify-center text-white text-2xl">
+                {user?.email?.address?.charAt(0).toUpperCase() || user?.wallet?.address?.substring(0, 2) || "U"}
+              </div>
+            </div>
+            <div className="md:ml-6">
+              <h2 className="text-3xl font-bold">
+                Welcome back{user?.email ? `, ${user.email.address.split('@')[0]}` : ""}!
+              </h2>
+              <p className="text-gray-400 mt-2">
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>              {user?.createdAt && (
+                <p className="text-gray-400 text-sm mt-1">
+                  Member since: {new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </p>
+              )}
+              {user?.wallet?.address && (
+                <p className="text-gray-400 text-xs mt-1 font-mono bf-mono truncate max-w-xs">
+                  Wallet: {user.wallet.address}
+                </p>
+              )}
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-700 mt-8 pt-8">
+            <div className="bf-grid">
+              <div className="bf-panel hover:border-white transition-all">
+                <h3 className="text-xl font-medium">Your Business Cards</h3>
+                <p className="mt-2 text-gray-400">View and manage your digital business cards</p>
+                <Link 
+                  href="/dashboard" 
+                  className="mt-4 inline-flex items-center text-sm font-medium underline text-white hover:text-gray-300"
+                >
+                  Manage cards <span aria-hidden="true" className="ml-1">→</span>
+                </Link>
+              </div>
+              <div className="bf-panel hover:border-white transition-all">
+                <h3 className="text-xl font-medium">Account Settings</h3>
+                <p className="mt-2 text-gray-400">Update your profile information and preferences</p>
+                <Link 
+                  href="/dashboard" 
+                  className="mt-4 inline-flex items-center text-sm font-medium underline text-white hover:text-gray-300"
+                >
+                  View settings <span aria-hidden="true" className="ml-1">→</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
       </main>
-    </>
+    </div>
   );
+}
+
+export default function HomePage({ isAuthenticated }: { isAuthenticated?: boolean }) {
+  return isAuthenticated ? <UserWelcome /> : <LandingPage />;
 }

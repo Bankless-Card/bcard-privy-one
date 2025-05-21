@@ -2,6 +2,9 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { getAccessToken, usePrivy } from "@privy-io/react-auth";
 import Head from "next/head";
+import Link from "next/link";
+import { Logo } from "../components/logo";
+// import CardCreationForm from "../components/card-creation-form";
 
 async function verifyToken() {
   const url = "/api/verify";
@@ -53,32 +56,48 @@ export default function DashboardPage() {
   const googleSubject = user?.google?.subject || null;
   const twitterSubject = user?.twitter?.subject || null;
   const discordSubject = user?.discord?.subject || null;
-
   return (
     <>
       <Head>
-        <title>Privy Auth Demo</title>
+        <title>BCard Dashboard · Black Flag</title>
       </Head>
 
-      <main className="flex flex-col min-h-screen px-4 sm:px-20 py-6 sm:py-10 bg-privy-light-blue">
+      <div className="bf-theme min-h-screen">
         {ready && authenticated ? (
           <>
-            <div className="flex flex-row justify-between">
-              <h1 className="text-2xl font-semibold">Welcome BCardigans</h1>
-              <button
-                onClick={logout}
-                className="text-sm bg-violet-200 hover:text-violet-900 py-2 px-4 rounded-md text-violet-700"
-              >
-                Logout
-              </button>
-            </div>
-            <div className="mt-12 flex gap-4 flex-wrap">
-              {googleSubject ? (
+            <nav className="bg-black py-4">
+              <div className="bf-container">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <Link href="/" className="flex items-center">
+                      <span className="bf-flag text-xl mr-2">🏴</span>
+                      <Logo fontColor="white" />
+                    </Link>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <Link href="/" className="bf-nav-item">
+                      Home
+                    </Link>
+                    <button
+                      onClick={logout}
+                      className="bf-button"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </nav>
+
+            <main className="bf-container py-10">
+              <div className="bf-panel mb-8">
+                <h2 className="text-2xl font-bold mb-6">Account Management</h2>
+                <div className="flex gap-4 flex-wrap">{googleSubject ? (
                 <button
                   onClick={() => {
                     unlinkGoogle(googleSubject);
                   }}
-                  className="text-sm border border-violet-600 hover:border-violet-700 py-2 px-4 rounded-md text-violet-600 hover:text-violet-700 disabled:border-gray-500 disabled:text-gray-500 hover:disabled:text-gray-500"
+                  className="bf-button"
                   disabled={!canRemoveAccount}
                 >
                   Unlink Google
@@ -88,7 +107,7 @@ export default function DashboardPage() {
                   onClick={() => {
                     linkGoogle();
                   }}
-                  className="text-sm bg-violet-600 hover:bg-violet-700 py-2 px-4 rounded-md text-white"
+                  className="bf-button"
                 >
                   Link Google
                 </button>
@@ -99,35 +118,33 @@ export default function DashboardPage() {
                   onClick={() => {
                     unlinkTwitter(twitterSubject);
                   }}
-                  className="text-sm border border-violet-600 hover:border-violet-700 py-2 px-4 rounded-md text-violet-600 hover:text-violet-700 disabled:border-gray-500 disabled:text-gray-500 hover:disabled:text-gray-500"
+                  className="bf-button"
                   disabled={!canRemoveAccount}
                 >
                   Unlink Twitter
                 </button>
               ) : (
                 <button
-                  className="text-sm bg-violet-600 hover:bg-violet-700 py-2 px-4 rounded-md text-white"
+                  className="bf-button"
                   onClick={() => {
                     linkTwitter();
                   }}
                 >
                   Link Twitter
                 </button>
-              )}
-
-              {discordSubject ? (
+              )}              {discordSubject ? (
                 <button
                   onClick={() => {
                     unlinkDiscord(discordSubject);
                   }}
-                  className="text-sm border border-violet-600 hover:border-violet-700 py-2 px-4 rounded-md text-violet-600 hover:text-violet-700 disabled:border-gray-500 disabled:text-gray-500 hover:disabled:text-gray-500"
+                  className="bf-button"
                   disabled={!canRemoveAccount}
                 >
                   Unlink Discord
                 </button>
               ) : (
                 <button
-                  className="text-sm bg-violet-600 hover:bg-violet-700 py-2 px-4 rounded-md text-white"
+                  className="bf-button"
                   onClick={() => {
                     linkDiscord();
                   }}
@@ -141,7 +158,7 @@ export default function DashboardPage() {
                   onClick={() => {
                     unlinkEmail(email.address);
                   }}
-                  className="text-sm border border-violet-600 hover:border-violet-700 py-2 px-4 rounded-md text-violet-600 hover:text-violet-700 disabled:border-gray-500 disabled:text-gray-500 hover:disabled:text-gray-500"
+                  className="bf-button"
                   disabled={!canRemoveAccount}
                 >
                   Unlink email
@@ -149,7 +166,7 @@ export default function DashboardPage() {
               ) : (
                 <button
                   onClick={linkEmail}
-                  className="text-sm bg-violet-600 hover:bg-violet-700 py-2 px-4 rounded-md text-white"
+                  className="bf-button"
                 >
                   Connect email
                 </button>
@@ -159,7 +176,7 @@ export default function DashboardPage() {
                   onClick={() => {
                     unlinkWallet(wallet.address);
                   }}
-                  className="text-sm border border-violet-600 hover:border-violet-700 py-2 px-4 rounded-md text-violet-600 hover:text-violet-700 disabled:border-gray-500 disabled:text-gray-500 hover:disabled:text-gray-500"
+                  className="bf-button"
                   disabled={!canRemoveAccount}
                 >
                   Unlink wallet
@@ -167,7 +184,7 @@ export default function DashboardPage() {
               ) : (
                 <button
                   onClick={linkWallet}
-                  className="text-sm bg-violet-600 hover:bg-violet-700 py-2 px-4 rounded-md text-white border-none"
+                  className="bf-button"
                 >
                   Connect wallet
                 </button>
@@ -177,7 +194,7 @@ export default function DashboardPage() {
                   onClick={() => {
                     unlinkPhone(phone.number);
                   }}
-                  className="text-sm border border-violet-600 hover:border-violet-700 py-2 px-4 rounded-md text-violet-600 hover:text-violet-700 disabled:border-gray-500 disabled:text-gray-500 hover:disabled:text-gray-500"
+                  className="bf-button"
                   disabled={!canRemoveAccount}
                 >
                   Unlink phone
@@ -185,40 +202,46 @@ export default function DashboardPage() {
               ) : (
                 <button
                   onClick={linkPhone}
-                  className="text-sm bg-violet-600 hover:bg-violet-700 py-2 px-4 rounded-md text-white border-none"
+                  className="bf-button"
                 >
                   Connect phone
                 </button>
-              )}
-
-              <button
+              )}              <button
                 onClick={() => verifyToken().then(setVerifyResult)}
-                className="text-sm bg-violet-600 hover:bg-violet-700 py-2 px-4 rounded-md text-white border-none"
+                className="bf-button"
               >
-                Verify token on server
+                Verify Token
               </button>
+                </div>
+              </div>
 
               {Boolean(verifyResult) && (
-                <details className="w-full">
-                  <summary className="mt-6 font-bold uppercase text-sm text-gray-600">
-                    Server verify result
-                  </summary>
-                  <pre className="max-w-4xl bg-slate-700 text-slate-50 font-mono p-4 text-xs sm:text-sm rounded-md mt-2">
-                    {JSON.stringify(verifyResult, null, 2)}
-                  </pre>
-                </details>
-              )}
-            </div>
+                <div className="bf-panel mb-8">
+                  <details className="w-full">
+                    <summary className="font-bold uppercase text-sm cursor-pointer">
+                      Server Verification Result
+                    </summary>
+                    <pre className="bg-gray-800 p-4 text-xs sm:text-sm rounded-md mt-2 overflow-auto bf-mono">
+                      {JSON.stringify(verifyResult, null, 2)}
+                    </pre>
+                  </details>
+                </div>
+              )}              <div className="bf-panel">
+                <h3 className="text-xl font-bold mb-4">User Information</h3>
+                <pre className="bg-gray-800 p-4 text-xs sm:text-sm rounded-md overflow-auto bf-mono">
+                  {JSON.stringify(user, null, 2)}
+                </pre>
+              </div>
 
-            <p className="mt-6 font-bold uppercase text-sm text-gray-600">
-              User object
-            </p>
-            <pre className="max-w-4xl bg-slate-700 text-slate-50 font-mono p-4 text-xs sm:text-sm rounded-md mt-2">
-              {JSON.stringify(user, null, 2)}
-            </pre>
+              {/* Card Creation Section 
+                <div className="mt-8">
+                  <h2 className="text-2xl font-bold mb-6">Manage Your BCards</h2>
+                  <CardCreationForm walletAddress={wallet?.address} userEmail={email?.address} />
+                </div> */}
+            </main>
           </>
         ) : null}
-      </main>
+      </div>
     </>
   );
 }

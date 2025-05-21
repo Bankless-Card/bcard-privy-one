@@ -1,0 +1,238 @@
+/* Black Flag Theme - Inspired by https://blackflag-test.vercel.app/ */
+
+:root {
+  /* Color palette */
+  --bf-background: #000000;  /* Deep black background */
+  --bf-text: #ffffff;        /* White text for high contrast */
+  --bf-accent: #ff5a5a;      /* Red accent - adjust as needed */
+  --bf-gray-dark: #1a1a1a;   /* Dark gray for panels */
+  --bf-gray-medium: #333333; /* Medium gray for borders */
+  --bf-gray-light: #666666;  /* Light gray for secondary text */
+  
+  /* Typography */
+  --bf-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --bf-font-mono: 'Roboto Mono', monospace;
+}
+
+/* Base styles */
+.bf-theme {
+  background-color: var(--bf-background);
+  color: var(--bf-text);
+  font-family: var(--bf-font-primary);
+  line-height: 1.5;
+}
+
+/* Header styles */
+.bf-header {
+  padding: 2rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.bf-logo {
+  height: 60px;
+  width: auto;
+}
+
+/* Container */
+.bf-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* Section styles */
+.bf-section {
+  margin: 4rem 0;
+  border-top: 1px solid var(--bf-gray-medium);
+  padding-top: 2rem;
+}
+
+/* Headings */
+.bf-theme h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+}
+
+.bf-theme h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 2rem 0 1rem;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.bf-theme h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 1.5rem 0 1rem;
+}
+
+/* Text elements */
+.bf-theme p {
+  margin-bottom: 1.5rem;
+  font-size: 1.125rem;
+}
+
+/* Lists */
+.bf-theme ul,
+.bf-theme ol {
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+.bf-theme li {
+  margin-bottom: 0.5rem;
+}
+
+.bf-theme ol {
+  list-style-type: decimal;
+}
+
+.bf-theme ul {
+  list-style-type: disc;
+}
+
+/* Links */
+.bf-theme a {
+  color: var(--bf-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: all 0.2s ease;
+}
+
+.bf-theme a:hover {
+  color: var(--bf-accent);
+}
+
+/* Buttons */
+.bf-button {
+  display: inline-block;
+  background-color: transparent;
+  color: var(--bf-text);
+  border: 1px solid var(--bf-text);
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.bf-button:hover {
+  background-color: var(--bf-text);
+  color: var(--bf-background);
+}
+
+/* Panels/Cards */
+.bf-panel {
+  background-color: var(--bf-gray-dark);
+  border: 1px solid var(--bf-gray-medium);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Navigation */
+.bf-nav {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+.bf-nav-item {
+  margin: 0 1rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+}
+
+/* Footer */
+.bf-footer {
+  margin-top: 4rem;
+  padding: 2rem 0;
+  border-top: 1px solid var(--bf-gray-medium);
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--bf-gray-light);
+}
+
+/* Code/mono text */
+.bf-mono {
+  font-family: var(--bf-font-mono);
+  background-color: var(--bf-gray-dark);
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+}
+
+/* Helper classes */
+.bf-text-center {
+  text-align: center;
+}
+
+.bf-margin-top {
+  margin-top: 2rem;
+}
+
+.bf-margin-bottom {
+  margin-bottom: 2rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .bf-container {
+    padding: 0 1rem;
+  }
+  
+  .bf-theme h1 {
+    font-size: 2rem;
+  }
+  
+  .bf-theme h2 {
+    font-size: 1.75rem;
+  }
+  
+  .bf-nav {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .bf-nav-item {
+    margin: 0.5rem 0;
+  }
+}
+
+/* Grid system */
+.bf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Images */
+.bf-img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Highlight */
+.bf-highlight {
+  background-color: var(--bf-accent);
+  color: var(--bf-background);
+  padding: 0.1em 0.3em;
+}
+
+/* Flag emoji special styling */
+.bf-flag {
+  font-size: 1.2em;
+  margin-right: 0.3em;
+  vertical-align: middle;
+}

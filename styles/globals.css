@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Black Flag theme */
+@import "./blackflag-theme.css";
+
 @layer base {
   /* normal */
   @font-face {
