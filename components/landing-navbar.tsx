@@ -8,7 +8,9 @@ export default function LandingNavbar() {
         <div className="flex h-16 justify-between">
           <div className="flex">
             <div className="flex flex-shrink-0 items-center">
-              <Logo />
+              <Link href="/">
+                <Logo />
+              </Link>
             </div>
             <div className="sm:ml-6 sm:flex sm:space-x-8">
               <Link
