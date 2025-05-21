@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { getRoute } from '../utils/routes';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -16,10 +17,10 @@ export default function Footer() {
           </div>
           
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-            <Link href="/" className="hover:text-gray-300 transition-colors">
+            <Link href={getRoute("/")} className="hover:text-gray-300 transition-colors">
               Home
             </Link>
-            <Link href="/login" className="hover:text-gray-300 transition-colors">
+            <Link href={getRoute("/login")} className="hover:text-gray-300 transition-colors">
               Login
             </Link>
             <Link href="#mission" className="hover:text-gray-300 transition-colors">
