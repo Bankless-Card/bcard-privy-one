@@ -3,6 +3,7 @@ import { useLogin } from "@privy-io/react-auth";
 import { PrivyClient } from "@privy-io/server-auth";
 import { GetServerSideProps } from "next";
 import Head from "next/head";
+import Link from "next/link";
 import { useRouter } from "next/router";
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
@@ -39,22 +40,31 @@ export default function LoginPage() {
   return (
     <>
       <Head>
-        <title>Login · Privy</title>
+        <title>Login · BCard Black Flag</title>
       </Head>
 
-      <main className="flex min-h-screen min-w-full">
-        <div className="flex bg-privy-light-blue flex-1 p-6 justify-center items-center">
+      <main className="bf-theme flex min-h-screen min-w-full">
+        <div className="flex flex-1 p-6 justify-center items-center">
           <div>
+            <div className="flex justify-center">
+              <div className="w-20 h-20 flex items-center justify-center mb-6">
+                <span className="bf-flag text-5xl">🏴</span>
+              </div>
+            </div>
             <div>
               <Portal style={{ maxWidth: "100%", height: "auto" }} />
-            </div>
-            <div className="mt-6 flex justify-center text-center">
+            </div>            <div className="mt-8 flex flex-col items-center justify-center text-center">
               <button
-                className="bg-violet-600 hover:bg-violet-700 py-3 px-6 text-white rounded-lg"
+                className="bf-button text-lg py-3 px-8"
                 onClick={login}
               >
                 Log in
               </button>
+              <div className="mt-6">
+                <Link href="/" className="text-white underline hover:text-gray-300 text-sm">
+                  Return to home page
+                </Link>
+              </div>
             </div>
           </div>
         </div>
