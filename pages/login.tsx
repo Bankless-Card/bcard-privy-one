@@ -5,6 +5,7 @@ import { GetServerSideProps } from "next";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { getRoute } from "../utils/routes";
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   const cookieAuthToken = req.cookies["privy-token"];
@@ -20,11 +21,11 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
     const claims = await client.verifyAuthToken(cookieAuthToken);
     // Use this result to pass props to a page for server rendering or to drive redirects!
     // ref https://nextjs.org/docs/pages/api-reference/functions/get-server-side-props
-    console.log({ claims });
-
+    console.log({ claims });    // We need to handle getRoute differently on server side since it uses process.env.NODE_ENV
+    const basePath = process.env.NODE_ENV === 'production' ? '/bcard-privy-one' : '';
     return {
       props: {},
-      redirect: { destination: "/dashboard", permanent: false },
+      redirect: { destination: `${basePath}/dashboard`, permanent: false },
     };
   } catch (error) {
     return { props: {} };
@@ -34,7 +35,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useLogin({
-    onComplete: () => router.push("/dashboard"),
+    onComplete: () => router.push(getRoute("/dashboard")),
   });
 
   return (
@@ -59,9 +60,8 @@ export default function LoginPage() {
                 onClick={login}
               >
                 Log in
-              </button>
-              <div className="mt-6">
-                <Link href="/" className="text-white underline hover:text-gray-300 text-sm">
+              </button>              <div className="mt-6">
+                <Link href={getRoute("/")} className="text-white underline hover:text-gray-300 text-sm">
                   Return to home page
                 </Link>
               </div>

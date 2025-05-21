@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Logo } from './logo';
+import { getRoute } from '../utils/routes';
 
 export default function LandingNavbar() {
   return (
@@ -8,7 +9,7 @@ export default function LandingNavbar() {
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <div className="flex items-center">
-              <Link href="/" className="flex items-center">
+              <Link href={getRoute("/")} className="flex items-center">
                 <span className="bf-flag text-xl mr-2">🏴</span>
                 <Logo fontColor="white" />
               </Link>
@@ -16,7 +17,7 @@ export default function LandingNavbar() {
           </div>
           <div className="hidden md:flex md:items-center md:space-x-6">
             <Link
-              href="/login"
+              href={getRoute("/login")}
               className="bf-nav-item"
             >
               Login

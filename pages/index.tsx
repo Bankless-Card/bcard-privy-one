@@ -6,6 +6,7 @@ import Link from "next/link";
 import React from "react";
 import Head from "next/head";
 import { Logo } from "../components/logo";
+import { getRoute } from "../utils/routes";
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   const cookieAuthToken = req.cookies["privy-token"];
@@ -42,14 +43,13 @@ function UserWelcome() {
         <div className="bf-container">
           <div className="flex justify-between items-center">
             <div className="flex items-center">
-              <Link href="/" className="flex items-center">
+              <Link href={getRoute("/")} className="flex items-center">
                 <span className="bf-flag text-xl mr-2">🏴</span>
                 <Logo fontColor="white" />
               </Link>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link 
-                href="/dashboard" 
+            <div className="flex items-center space-x-4">              <Link 
+                href={getRoute("/dashboard")} 
                 className="bf-button"
               >
                 Go to Dashboard
@@ -98,7 +98,7 @@ function UserWelcome() {
                 <h3 className="text-xl font-medium">Your Business Cards</h3>
                 <p className="mt-2 text-gray-400">View and manage your digital business cards</p>
                 <Link 
-                  href="/dashboard" 
+                  href={getRoute("/dashboard")} 
                   className="mt-4 inline-flex items-center text-sm font-medium underline text-white hover:text-gray-300"
                 >
                   Manage cards <span aria-hidden="true" className="ml-1">→</span>
@@ -108,7 +108,7 @@ function UserWelcome() {
                 <h3 className="text-xl font-medium">Account Settings</h3>
                 <p className="mt-2 text-gray-400">Update your profile information and preferences</p>
                 <Link 
-                  href="/dashboard" 
+                  href={getRoute("/dashboard")} 
                   className="mt-4 inline-flex items-center text-sm font-medium underline text-white hover:text-gray-300"
                 >
                   View settings <span aria-hidden="true" className="ml-1">→</span>
