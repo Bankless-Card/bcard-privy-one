@@ -44,7 +44,7 @@ export default function Footer() {
           <p>
             This is a demo integration of BCard with Black Flag. 
             <a 
-              href="https://blackflag-test.vercel.app/" 
+              href="https://blackflagcollective.org/" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="ml-1 text-gray-400 hover:text-white underline"
