@@ -1,33 +1,10 @@
 import LandingPage from "../components/landing-page";
-import { PrivyClient } from "@privy-io/server-auth";
-import { GetServerSideProps } from "next";
 import { usePrivy } from "@privy-io/react-auth";
 import Link from "next/link";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Head from "next/head";
 import { Logo } from "../components/logo";
 import { getRoute } from "../utils/routes";
-
-export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-  const cookieAuthToken = req.cookies["privy-token"];
-
-  // If no cookie is found, skip any further checks
-  if (!cookieAuthToken) return { props: { isAuthenticated: false } };
-
-  const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
-  const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
-  const client = new PrivyClient(PRIVY_APP_ID!, PRIVY_APP_SECRET!);
-
-  try {
-    await client.verifyAuthToken(cookieAuthToken);
-    // Pass isAuthenticated flag to component instead of redirecting
-    return {
-      props: { isAuthenticated: true },
-    };
-  } catch (error) {
-    return { props: { isAuthenticated: false } };
-  }
-};
 
 // User welcome component for authenticated users
 function UserWelcome() {
@@ -48,7 +25,8 @@ function UserWelcome() {
                 <Logo fontColor="white" />
               </Link>
             </div>
-            <div className="flex items-center space-x-4">              <Link 
+            <div className="flex items-center space-x-4">              
+              <Link 
                 href={getRoute("/dashboard")} 
                 className="bf-button"
               >
@@ -79,7 +57,8 @@ function UserWelcome() {
               </h2>
               <p className="text-gray-400 mt-2">
                 {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-              </p>              {user?.createdAt && (
+              </p>              
+              {user?.createdAt && (
                 <p className="text-gray-400 text-sm mt-1">
                   Member since: {new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
@@ -122,6 +101,24 @@ function UserWelcome() {
   );
 }
 
-export default function HomePage({ isAuthenticated }: { isAuthenticated?: boolean }) {
-  return isAuthenticated ? <UserWelcome /> : <LandingPage />;
+export default function HomePage() {
+  const { ready, authenticated } = usePrivy();
+  const [shouldShowUserWelcome, setShouldShowUserWelcome] = useState(false);
+  
+  useEffect(() => {
+    if (ready) {
+      setShouldShowUserWelcome(authenticated);
+    }
+  }, [ready, authenticated]);
+
+  // Show nothing until Privy is ready to avoid flashing content
+  if (!ready) {
+    return (
+      <div className="bf-theme min-h-screen flex items-center justify-center">
+        <div className="animate-pulse">Loading...</div>
+      </div>
+    );
+  }
+
+  return shouldShowUserWelcome ? <UserWelcome /> : <LandingPage />;
 }
