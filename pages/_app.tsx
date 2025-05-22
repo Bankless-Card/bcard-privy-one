@@ -43,9 +43,18 @@ function MyApp({ Component, pageProps }: AppProps) {
         <title>BCard · Black Flag</title>
         <meta name="description" content="BCard integration with Black Flag" />
       </Head>
-      <PrivyProvider
+      {/* <PrivyProvider
         appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID || "clot4yaxz06dll50fkodfgzh4"}
         clientId={process.env.NEXT_PUBLIC_PRIVY_APP_CLIENT_ID || "client-WY2eJ3TxteESv8AvCio41QqM6fEwNqQA7rF9xevtfyfr2"}
+        config={{
+          embeddedWallets: {
+            createOnLogin: "all-users",
+          },
+        }}
+      > */}
+      <PrivyProvider
+        appId={"clot4yaxz06dll50fkodfgzh4"}
+        clientId={"client-WY2eJ3TxteESv8AvCio41QqM6fEwNqQA7rF9xevtfyfr2"}
         config={{
           embeddedWallets: {
             createOnLogin: "all-users",
