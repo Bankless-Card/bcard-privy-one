@@ -1,26 +1,26 @@
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
-import { getAccessToken, usePrivy } from "@privy-io/react-auth";
+import { useEffect } from "react";
+import { usePrivy } from "@privy-io/react-auth";
 import Head from "next/head";
 import Link from "next/link";
 import { Logo } from "../components/logo";
 import { getRoute } from "../utils/routes";
 import CardCreationForm from "../components/card-creation-form";
 
-async function verifyToken() {
-  const url = getRoute("/api/verify");
-  const accessToken = await getAccessToken();
-  const result = await fetch(url, {
-    headers: {
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined),
-    },
-  });
+// async function verifyToken() {
+//   const url = getRoute("/api/verify");
+//   const accessToken = await getAccessToken();
+//   const result = await fetch(url, {
+//     headers: {
+//       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined),
+//     },
+//   });
 
-  return await result.json();
-}
+//   return await result.json();
+// }
 
 export default function DashboardPage() {
-  const [verifyResult, setVerifyResult] = useState();
+  // const [verifyResult, setVerifyResult] = useState();
   const router = useRouter();
   const {
     ready,
@@ -207,16 +207,19 @@ export default function DashboardPage() {
                 >
                   Connect phone
                 </button>
-              )}              <button
+              )}              
+              {/* DISABLED DUE TO STATIC SERVER
+              <button
                 onClick={() => verifyToken().then(setVerifyResult)}
                 className="bf-button"
               >
                 Verify Token
               </button>
+              */}
                 </div>
               </div>
 
-              {Boolean(verifyResult) && (
+              {/* false && Boolean(verifyResult) && (
                 <div className="bf-panel mb-8">
                   <details className="w-full">
                     <summary className="font-bold uppercase text-sm cursor-pointer">
@@ -227,7 +230,7 @@ export default function DashboardPage() {
                     </pre>
                   </details>
                 </div>
-              )}
+              ) */}
 
               <div className="bf-panel">
                 <h3 className="text-xl font-bold mb-4">User Information</h3>

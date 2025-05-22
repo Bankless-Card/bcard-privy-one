@@ -1,42 +1,24 @@
 import Portal from "../components/graphics/portal";
-import { useLogin } from "@privy-io/react-auth";
-import { PrivyClient } from "@privy-io/server-auth";
-import { GetServerSideProps } from "next";
+import { useLogin, usePrivy } from "@privy-io/react-auth";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { getRoute } from "../utils/routes";
-
-export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-  const cookieAuthToken = req.cookies["privy-token"];
-
-  // If no cookie is found, skip any further checks
-  if (!cookieAuthToken) return { props: {} };
-
-  const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
-  const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
-  const client = new PrivyClient(PRIVY_APP_ID!, PRIVY_APP_SECRET!);
-
-  try {
-    const claims = await client.verifyAuthToken(cookieAuthToken);
-    // Use this result to pass props to a page for server rendering or to drive redirects!
-    // ref https://nextjs.org/docs/pages/api-reference/functions/get-server-side-props
-    console.log({ claims });    // We need to handle getRoute differently on server side since it uses process.env.NODE_ENV
-    const basePath = process.env.NODE_ENV === 'production' ? '/bcard-privy-one' : '';
-    return {
-      props: {},
-      redirect: { destination: `${basePath}/dashboard`, permanent: false },
-    };
-  } catch (error) {
-    return { props: {} };
-  }
-};
+import { useEffect } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useLogin({
     onComplete: () => router.push(getRoute("/dashboard")),
   });
+  const { ready, authenticated } = usePrivy();
+
+  // Check authentication status and redirect if already logged in
+  useEffect(() => {
+    if (ready && authenticated) {
+      router.push(getRoute("/dashboard"));
+    }
+  }, [ready, authenticated, router]);
 
   return (
     <>
@@ -54,13 +36,15 @@ export default function LoginPage() {
             </div>
             <div>
               <Portal style={{ maxWidth: "100%", height: "auto" }} />
-            </div>            <div className="mt-8 flex flex-col items-center justify-center text-center">
+            </div>
+            <div className="mt-8 flex flex-col items-center justify-center text-center">
               <button
                 className="bf-button text-lg py-3 px-8"
                 onClick={login}
               >
                 Log in
-              </button>              <div className="mt-6">
+              </button>
+              <div className="mt-6">
                 <Link href={getRoute("/")} className="text-white underline hover:text-gray-300 text-sm">
                   Return to home page
                 </Link>
