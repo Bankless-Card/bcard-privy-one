@@ -7,19 +7,25 @@
  * @param href - The path to format (e.g., '/dashboard')
  * @returns The correctly formatted path with basePath if needed
  */
-export function getRoute(href: string): string {
-  // This check is needed because Next.js handles basePath in Link components automatically,
-  // but we need to handle it manually for other cases (like redirects or non-Next.js links)
-  const basePath = process.env.NODE_ENV === 'production' ? '/bcard-privy-one' : '';
+// export function getRoute(href: string): string {
+//   // This check is needed because Next.js handles basePath in Link components automatically,
+//   // but we need to handle it manually for other cases (like redirects or non-Next.js links)
+//   const basePath = process.env.NODE_ENV === 'production' ? '/bcard-privy-one' : '';
   
-  // If href is external, return it as is
-  if (href.startsWith('http') || href.startsWith('#')) {
-    return href;
-  }
+//   // If href is external, return it as is
+//   if (href.startsWith('http') || href.startsWith('#')) {
+//     return href;
+//   }
   
-  // Ensure we don't double up the basePath
-  const path = href.startsWith('/') ? href : `/${href}`;
-  return `${basePath}${path}`;
+//   // Ensure we don't double up the basePath
+//   const path = href.startsWith('/') ? href : `/${href}`;
+//   return `${basePath}${path}`;
+// }
+
+export function getRoute(path: string): string {
+  // Make sure path starts with a slash and return only the path
+  // Next.js will handle adding the basePath
+  return path.startsWith('/') ? path : `/${path}`;
 }
 
 /**
