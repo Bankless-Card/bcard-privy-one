@@ -132,9 +132,7 @@ function contentTemplate(sc=SITE_CONTENT) {
           ))}
 
         </div>
-        <p className="text-center mt-8">
-          {sc.footer}
-        </p>
+        
       </section>
       
       <section className="mb-16">
@@ -149,6 +147,12 @@ function contentTemplate(sc=SITE_CONTENT) {
           ))}
           
         </ul>
+      </section>
+
+      <section className="text-center">
+        <p className="text-center mt-8">
+          {sc.footer}
+        </p>
       </section>
       
       <section className="text-center">
