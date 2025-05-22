@@ -1,7 +1,7 @@
 import React from 'react';
 import Head from 'next/head';
 import LandingNavbar from './landing-navbar';
-import BlackFlagContent from './black-flag-content';
+import BlackFlagSite from './black-flag-site';
 import Footer from './footer';
 
 export default function LandingPage() {
@@ -15,7 +15,7 @@ export default function LandingPage() {
         <LandingNavbar />
         
         <main className="flex-grow">
-          <BlackFlagContent />
+          <BlackFlagSite />
         </main>
         
         <Footer />
