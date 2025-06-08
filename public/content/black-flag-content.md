@@ -2,6 +2,8 @@
 
 We are a community of people who find top-down organizations such as big banks, big governments, and big tech stifling. We seek to make bottom-up change through our actions.
 
+{{component:FlagEmoji}}
+
 ## Mission 1: Real-World Meetups
 
 We reward people around the world for holding in-real-life (IRL) meetups. You can see our [previously funded events](https://blackflagcollective.org/funded-events) or visit our [Snapshot space](https://snapshot.box/#/s:black-flag.eth) to participate in current funding decisions.
@@ -35,6 +37,8 @@ Voters get to decide which events get funded.
 - [BCard Foundation](https://getbcard.io/)
 - [Black Flag DAO](https://blackflagdao.notion.site/)
 
+{{component:BCardIntegration}}
+
 ## Official Links
 
 - [Farcaster](https://warpcast.com/~/channel/blackflag)
@@ -46,3 +50,7 @@ Voters get to decide which events get funded.
 ---
 
 This initiative is managed using a [Multisig](https://basescan.org/address/0xc9Dd18f35E406Bf94cf937c6aAE618D7e84A6A6d) with 2 signers: [@links](https://warpcast.com/links) and [@icedcool](https://warpcast.com/icedcool).
+
+## Get Started
+
+{{component:LoginButton}}
