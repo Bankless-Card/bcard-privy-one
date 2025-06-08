@@ -5,6 +5,8 @@ import React, { useEffect, useState } from "react";
 import Head from "next/head";
 import { Logo } from "../components/logo";
 import { getRoute } from "../utils/routes";
+import fs from 'fs';
+import path from 'path';
 
 // User welcome component for authenticated users
 function UserWelcome() {
@@ -101,7 +103,21 @@ function UserWelcome() {
   );
 }
 
-export default function HomePage() {
+// this runs at build time (`next build`) and on every request when using `next dev`
+export async function getStaticProps() {
+  // Get the markdown content from the file system at build time
+  const markdownPath = path.join(process.cwd(), 'public', 'content', 'black-flag-content.md');
+  const markdownContent = fs.readFileSync(markdownPath, 'utf8');
+  
+  return {
+    props: {
+      markdownContent,
+    },
+  };
+}
+
+// this runs at build time (`next build`) and on every request when using `next dev`
+export default function HomePage({ markdownContent }: { markdownContent: string }) {
   const { ready, authenticated } = usePrivy();
   const [shouldShowUserWelcome, setShouldShowUserWelcome] = useState(false);
   
@@ -120,5 +136,5 @@ export default function HomePage() {
     );
   }
 
-  return shouldShowUserWelcome ? <UserWelcome /> : <LandingPage />;
+  return shouldShowUserWelcome ? <UserWelcome /> : <LandingPage markdownContent={markdownContent} />;
 }

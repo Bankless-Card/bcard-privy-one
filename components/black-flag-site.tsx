@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import BCardIntegration from './bcard-integration';
 import ReactMarkdown from 'react-markdown';
@@ -119,29 +119,7 @@ function BlackFlagContent({ markdownContent }: { markdownContent: string }) {
   );
 }
 
-export default function BlackFlagSite() {
-  const [markdownContent, setMarkdownContent] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    // Fetch the markdown content when component mounts
-    setIsLoading(true);
-    fetch('/content/black-flag-content.md')
-      .then(response => response.text())
-      .then(text => {
-        setMarkdownContent(text);
-        setIsLoading(false);
-      })
-      .catch(error => {
-        console.error('Error loading markdown:', error);
-        setIsLoading(false);
-      });
-  }, []);
-
-  if (isLoading) {
-    return <div className="text-center py-20">Loading content...</div>;
-  }
-
+export default function BlackFlagSite({ markdownContent = '' }: { markdownContent?: string }) {
   return (
     <BlackFlagContent markdownContent={markdownContent} />
   );

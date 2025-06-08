@@ -4,7 +4,7 @@ import LandingNavbar from './landing-navbar';
 import BlackFlagSite from './black-flag-site';
 import Footer from './footer';
 
-export default function LandingPage() {
+export default function LandingPage({ markdownContent }: { markdownContent: string }) {
   return (
     <>
       <Head>
@@ -15,7 +15,7 @@ export default function LandingPage() {
         <LandingNavbar />
         
         <main className="flex-grow">
-          <BlackFlagSite />
+          <BlackFlagSite markdownContent={markdownContent} />
         </main>
         
         <Footer />
