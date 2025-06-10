@@ -30,7 +30,14 @@ import {useSignMessage} from '@privy-io/react-auth';
 export default function DashboardPage() {
   // const [verifyResult, setVerifyResult] = useState();
   const router = useRouter();
-  const {signMessage} = useSignMessage();
+  const {signMessage} = useSignMessage({onSuccess: ({signature}) => {
+    console.log("Can use this signature: " + signature);
+    // Any logic you'd like to execute after a user successfully signs a message
+  },
+  onError: (error) => {
+    console.log(error);
+    // Any logic you'd like to execute after a user exits the message signing flow or there is an error
+  }});
 
   const {
     ready,
@@ -59,13 +66,8 @@ export default function DashboardPage() {
         showWalletUIs: true, // this will show the wallet UIs
       };
 
-      try {
-        // this will open the Privy UI to sign the message}
-        const {signature} = await signMessage({message: 'I hereby vote for foobar'}, {uiOptions});      
-        console.log('Signature:', signature);
-      } catch (error) {
-        console.error('Error signing message (probably canceled):', error);
-      }
+      await signMessage({message: 'I hereby vote for foobar'}, {uiOptions});      
+
     }
 
   useEffect(() => {
@@ -91,7 +93,7 @@ export default function DashboardPage() {
   function TestButton() {
     return(
       <button onClick={signIt} className="bf-button">Sign Message</button>)
-}
+  }
 
   const numAccounts = user?.linkedAccounts?.length || 0;
   const canRemoveAccount = numAccounts > 1;
