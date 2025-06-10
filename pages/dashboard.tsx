@@ -56,7 +56,7 @@ export default function DashboardPage() {
 
       const uiOptions = {
         title: 'You are voting for foobar project',
-        showWalletUIs: false, // this will show the wallet UIs
+        showWalletUIs: true, // this will show the wallet UIs
       };
 
       try {
