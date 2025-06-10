@@ -7,6 +7,12 @@ import { Logo } from "../components/logo";
 import { getRoute } from "../utils/routes";
 import CardCreationForm from "../components/card-creation-form";
 
+// import {useSignTransaction} from '@privy-io/react-auth';
+import {useSignMessage} from '@privy-io/react-auth';
+
+
+
+
 // async function verifyToken() {
 //   const url = getRoute("/api/verify");
 //   const accessToken = await getAccessToken();
@@ -19,9 +25,13 @@ import CardCreationForm from "../components/card-creation-form";
 //   return await result.json();
 // }
 
+
+
 export default function DashboardPage() {
   // const [verifyResult, setVerifyResult] = useState();
   const router = useRouter();
+  const {signMessage} = useSignMessage();
+
   const {
     ready,
     authenticated,
@@ -41,11 +51,46 @@ export default function DashboardPage() {
     unlinkDiscord,
   } = usePrivy();
 
+  // try to sign a TEST message with UI auth.
+    async function signIt() {
+
+      const uiOptions = {
+        title: 'You are voting for foobar project'
+      };
+
+      try {
+        // this will open the Privy UI to sign the message}
+        const {signature} = await signMessage({message: 'I hereby vote for foobar'}, {uiOptions});      
+        console.log('Signature:', signature);
+      } catch (error) {
+        console.error('Error signing message (probably canceled):', error);
+      }
+    }
+
   useEffect(() => {
     if (ready && !authenticated) {
       router.push(getRoute("/"));
     }
+
+    // testing transactions 
+    // const {signTransaction} = useSignTransaction();
+    // signTransaction({
+    //   to: '0xE3070d3e4309afA3bC9a6b057685743CF42da77C',
+    //   value: 100000
+    // });
+
+    // testing signatures, when ready and authenticated
+    signIt();
+
+    
+
   }, [ready, authenticated, router]);
+
+  // button to run the signIt function
+  function TestButton() {
+    return(
+      <button onClick={signIt} className="bf-button">Sign Message</button>)
+}
 
   const numAccounts = user?.linkedAccounts?.length || 0;
   const canRemoveAccount = numAccounts > 1;
@@ -207,7 +252,11 @@ export default function DashboardPage() {
                 >
                   Connect phone
                 </button>
-              )}              
+              )}    
+              <TestButton />
+
+
+
               {/* DISABLED DUE TO STATIC SERVER
               <button
                 onClick={() => verifyToken().then(setVerifyResult)}
