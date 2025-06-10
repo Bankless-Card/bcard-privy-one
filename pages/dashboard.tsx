@@ -55,7 +55,8 @@ export default function DashboardPage() {
     async function signIt() {
 
       const uiOptions = {
-        title: 'You are voting for foobar project'
+        title: 'You are voting for foobar project',
+        showWalletUIs: false, // this will show the wallet UIs
       };
 
       try {
@@ -80,7 +81,7 @@ export default function DashboardPage() {
     // });
 
     // testing signatures, when ready and authenticated
-    signIt();
+    // signIt();
 
     
 
