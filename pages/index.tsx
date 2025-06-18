@@ -1,10 +1,10 @@
-import LandingPage from "../components/landing-page";
-import { usePrivy } from "@privy-io/react-auth";
-import Link from "next/link";
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import Head from "next/head";
 import { Logo } from "../components/logo";
+import LandingPage from "../components/landing-page";
 import { getRoute } from "../utils/routes";
+import { usePrivy } from "@privy-io/react-auth";
 
 // User welcome component for authenticated users
 function UserWelcome() {

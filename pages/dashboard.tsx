@@ -7,25 +7,65 @@ import { Logo } from "../components/logo";
 import { getRoute } from "../utils/routes";
 import CardCreationForm from "../components/card-creation-form";
 
-// import {useSignTransaction} from '@privy-io/react-auth';
+import snapshot from '@snapshot-labs/snapshot.js';
+
 import {useSignMessage} from '@privy-io/react-auth';
 
+type GetVotingPowerParams = {
+  address: string;
+  network: string;
+  strategies: any[];
+  snapshotBlock: number | 'latest';
+  space: string;
+  delegation?: boolean;
+  options?: Record<string, any>;
+};
+
+const SNAPSHOT_KEY = "1f123784e8f1d779fe41b545f87c2a2ef6b2e92fcad2d720a5016d63cbae5035";
+
+/**
+ * Fetch voting power for a given address using snapshot.js
+ */
+export async function getVotingPower({
+  address,
+  network,
+  strategies,
+  snapshotBlock,
+  space,
+  delegation = false,
+  options = { url: 'https://score.snapshot.org/?apiKey=' + SNAPSHOT_KEY },
+}: GetVotingPowerParams): Promise<any> {
+  try {
+
+    console.log(options);
+    // Ensure snapshot.js is initialized
+    if (!snapshot.utils) {
+      throw new Error('Snapshot.js is not initialized. Please ensure it is properly set up.');
+    }
+
+    // Validate parameters
+    console.log('Fetching voting power with params:', address, network, strategies, snapshotBlock, space, delegation, options);
+
+    const vp = await snapshot.utils.getVp(
+      address,
+      network,
+      strategies,
+      snapshotBlock,
+      space,
+      delegation,
+      options
+    );
+
+    console.log('Voting Power:', vp);
+
+    return vp;
 
 
-
-// async function verifyToken() {
-//   const url = getRoute("/api/verify");
-//   const accessToken = await getAccessToken();
-//   const result = await fetch(url, {
-//     headers: {
-//       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined),
-//     },
-//   });
-
-//   return await result.json();
-// }
-
-
+  } catch (error) {
+    console.error('Error fetching voting power:', error);
+    throw error;
+  }
+}
 
 export default function DashboardPage() {
   // const [verifyResult, setVerifyResult] = useState();
@@ -70,9 +110,61 @@ export default function DashboardPage() {
 
     }
 
+    // async function getVP() {
+
+    //   const address = '0xa478c2975ab1ea89e8196811f51a7b7ade33eb11';
+    //   const network = '1';
+    //   const strategies = [
+    //     {
+    //       name: 'erc20-balance-of',
+    //       params: {
+    //         address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+    //         symbol: 'DAI',
+    //         decimals: 18
+    //       }
+    //     }
+    //   ];
+    //   const snapshot = 11437846;
+    //   const space = 'yam.eth';
+    //   const delegation = false;
+    //   const apiKey = 'your_api_key_here' // get an API Key for higher limits
+    //   const options = { url: `https://score.snapshot.org/?apiKey=${apiKey}` }
+
+    //   snapshot.utils.getVp(address, network, strategies, snapshot, space, delegation, options).then(vp => {
+    //     console.log('Voting Power', vp);
+    //   });
+    // }
+
   useEffect(() => {
     if (ready && !authenticated) {
       router.push(getRoute("/"));
+    }
+
+    // need user address
+    // need proposals (on which to get vp)
+
+
+    init();
+    async function init() {
+      // this to get vp for a specific user
+      const vp = await getVotingPower({
+        address: '0x63497A09fE65F278c97C3569Db7e0c606DFf87a2', // replace with actual user address
+        network: '8453', // Base mainnet
+        strategies: [{
+          name: 'erc20-balance-of',
+          params: {
+            address: '0x77aD6e07A68D25119b8891CC9d450a87CA35968B',
+            symbol: 'FLAG',
+            decimals: 18
+          }
+        }],
+        snapshotBlock: 31728474, // latest block on Base mainnet
+        space: 'black-flag.eth',
+        options: {
+          url: 'https://score.snapshot.org/?apiKey=' + SNAPSHOT_KEY
+        }
+      });
+      console.log('Voting Power:', vp);
     }
 
     // testing transactions 
