@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import { usePrivy } from "@privy-io/react-auth";
+import { usePrivy, useWallets, useSignMessage } from "@privy-io/react-auth";
 import Head from "next/head";
 import Link from "next/link";
 import { Logo } from "../components/logo";
@@ -8,8 +8,9 @@ import { getRoute } from "../utils/routes";
 import CardCreationForm from "../components/card-creation-form";
 
 import snapshot from '@snapshot-labs/snapshot.js';
-
-import {useSignMessage} from '@privy-io/react-auth';
+// import { Web3Provider } from '@ethersproject/providers';
+// import Web3 from 'web3';
+import { CastVote } from "../utils/functions";
 
 type GetVotingPowerParams = {
   address: string;
@@ -66,6 +67,51 @@ export async function getVotingPower({
     throw error;
   }
 }
+
+// export async function castVote(client, wallets) {
+//   // This function can be used to cast a vote using snapshot.js
+//   // const hub = 'https://hub.snapshot.org'; // or https://testnet.hub.snapshot.org for testnet
+//   // const client = new snapshot.Client712(hub);
+
+//   // const {wallets} = useWallets();
+//   if (!wallets || wallets.length === 0) {
+//     throw new Error('No wallets available. Please connect a wallet first.');
+//   }
+
+//   console.log('Available wallets:', wallets);
+
+//   const wallet = wallets[0]; // Replace this with your desired wallet
+//   // await wallet.switchChain(sepolia.id);
+
+//   // use privy Provider to handle rpc calls out
+//   // const web3 = new Web3Provider(window.ethereum);
+//   // const [account] = await web3.listAccounts();
+
+//   if (!wallet) {
+//     throw new Error('Wallet not connected');
+//   }
+
+//   const provider = await wallet.getEthereumProvider();
+//   // const web3 = new Web3(provider);
+//   console.log('Using wallet:', wallet);
+//   const ethersProvider = new Web3Provider(provider); // Add
+
+  
+//   // const [account] = await web3.listAccounts();
+
+//   const receipt = await client.vote(ethersProvider, wallet.address, {
+//     space: 'yam.eth',
+//     proposal: '0x21ea31e896ec5b5a49a3653e51e787ee834aaf953263144ab936ed756f36609f',
+//     type: 'single-choice',
+//     choice: 1,
+//     reason: 'Choice 1 make lot of sense',
+//     app: 'my-app'
+//   });
+
+//   console.log('Vote cast successfully:', receipt);
+
+//   return receipt;
+// }
 
 export default function DashboardPage() {
   // const [verifyResult, setVerifyResult] = useState();
@@ -135,6 +181,29 @@ export default function DashboardPage() {
     //   });
     // }
 
+  // const hub = 'https://hub.snapshot.org'; // or https://testnet.hub.snapshot.org for testnet
+  // const client = new snapshot.Client712(hub);
+  const {wallets} = useWallets();
+
+  // cast vote button component
+  async function castVoteTrigger() {
+    console.log('Wallets:', wallets);
+
+    CastVote(wallets).then(receipt => {
+      console.log('Vote cast successfully:', receipt);
+    }).catch(error => {
+      console.error('Error casting vote:', error);
+    });
+  }
+
+  function CastVoteButton() {
+    return (
+      <button onClick={castVoteTrigger} className="bf-button">
+        Cast Vote
+      </button>
+    );
+  }
+
   useEffect(() => {
     if (ready && !authenticated) {
       router.push(getRoute("/"));
@@ -165,6 +234,9 @@ export default function DashboardPage() {
         }
       });
       console.log('Voting Power:', vp);
+
+      
+
     }
 
     // testing transactions 
@@ -234,7 +306,8 @@ export default function DashboardPage() {
               <div className="bf-panel mb-8">
                 <h2 className="text-2xl font-bold mb-6">Account Management</h2>
                 <div className="flex gap-4 flex-wrap">{googleSubject ? (
-                <button
+            
+                  <button
                   onClick={() => {
                     unlinkGoogle(googleSubject);
                   }}
@@ -348,6 +421,7 @@ export default function DashboardPage() {
                   Connect phone
                 </button>
               )}    
+              <CastVoteButton />
               <TestButton />
 
 
