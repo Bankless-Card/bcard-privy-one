@@ -10,19 +10,13 @@ export default function LandingNavbar() {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
+
+
   return (
-    <nav className="bg-black py-4">
+    <nav className="py-4">
       <div className="bf-container">
         <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <div className="flex items-center">
-              <Link href={getRoute("/")} className="flex items-center">
-                <span className="bf-flag text-xl mr-2">🏴</span>
-                <Logo fontColor="white" />
-              </Link>
-            </div>
-          </div>
-          <div className="hidden md:flex md:items-center md:space-x-6">
+          <div className="md:flex md:items-center">
             <Link
               href={getRoute("/login")}
               className="bf-nav-item"

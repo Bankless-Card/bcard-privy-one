@@ -3,6 +3,7 @@ import Head from 'next/head';
 import LandingNavbar from './landing-navbar';
 import BlackFlagSite from './black-flag-site';
 import Footer from './footer';
+import Header from './header';
 
 export default function LandingPage({ markdownContent }: { markdownContent: string }) {
   return (
@@ -12,6 +13,7 @@ export default function LandingPage({ markdownContent }: { markdownContent: stri
       </Head>
 
       <div className="bf-theme min-h-screen flex flex-col">
+        <Header />
         <LandingNavbar />
         
         <main className="flex-grow">

@@ -1,8 +1,4 @@
-# We are the Black Flag
-
 We are a community of people who find top-down organizations such as big banks, big governments, and big tech stifling. We seek to make bottom-up change through our actions.
-
-{{component:FlagEmoji}}
 
 ## Mission 1: Real-World Meetups
 
