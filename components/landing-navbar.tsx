@@ -13,8 +13,7 @@ export default function LandingNavbar() {
 
 
   return (
-    <nav className="py-4">
-      <div className="bf-container">
+    <nav className="py-2 main-nav">
         <div className="flex justify-between items-center">
           <div className="md:flex md:items-center">
             <Link
@@ -91,7 +90,6 @@ export default function LandingNavbar() {
             </div>
           </div>
         )}
-      </div>
     </nav>
   );
 }

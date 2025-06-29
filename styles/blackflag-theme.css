@@ -15,18 +15,24 @@
   --bf-font-size: 16px;
 }
 
+
+/* A lot of this are overrides for Tailwind defaults */
 body {
   font-family: var(--bf-font-primary);
   margin: 0;
   padding: 20px;
   color: var(--bf-text);
   background-color: var(--bf-background);
+  line-height: 1;
 }
 header {
   text-align: center;
   border-bottom: solid 8px var(--bf-text);
 }
 
+main {
+  padding-bottom: 40px;
+}
 
 
 h2 img {
@@ -42,7 +48,6 @@ footer {
   position: fixed;
   bottom: 0px;
   right: 0px;
-  height: 1em;
   padding: 10px;
 }
 
@@ -145,17 +150,20 @@ a.sponsor img {
 }
 
 .bf-theme h2 {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  margin: 2rem 0 1rem;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
+  margin: 1rem 0 1rem;
+}
+
+.bf-theme h2 img {
+  display: inline-block;
+  margin-top: -8px;
 }
 
 .bf-theme h3 {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 600;
-  margin: 1.5rem 0 1rem;
+  margin: 1rem 0 1rem;
 }
 
 /* Text elements */
@@ -166,12 +174,12 @@ a.sponsor img {
 /* Lists */
 .bf-theme ul,
 .bf-theme ol {
-  margin-bottom: 1.5rem;
-  padding-left: 1.5rem;
+  margin-bottom: 0rem;
+  padding-left: 2.5rem;
 }
 
 .bf-theme li {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0rem;
 }
 
 .bf-theme ol {
@@ -191,7 +199,7 @@ a.sponsor img {
 }
 
 .bf-theme a:hover {
-  color: var(--bf-accent);
+  font-weight: bold;
 }
 
 /* Buttons */
@@ -236,6 +244,10 @@ a.sponsor img {
   font-weight: 600;
   letter-spacing: 0.05em;
   text-decoration: none;
+}
+
+.main-nav div :first-child {
+  margin-left: 0;
 }
 
 /* Footer */

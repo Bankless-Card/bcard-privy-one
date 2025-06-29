@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import BCardIntegration from './bcard-integration';
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 
 // Component registry - add your custom components here
 const ComponentRegistry = {
@@ -76,6 +77,7 @@ const MarkdownRenderer = ({ markdown }: { markdown: string }) => {
           return (
             <ReactMarkdown
               key={index}
+              rehypePlugins={[rehypeRaw]}
               components={{
                 h1: ({ node, ...props }) => <h1 className="" {...props} />,
                 h2: ({ node, ...props }) => <h2 className=" " {...props} />,
