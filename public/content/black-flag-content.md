@@ -30,7 +30,7 @@ Voters get to decide which events get funded.
 
 1. Deposit [USDC](https://app.cabana.fi/vault/8453/0x119d2bc7bb9b94f5518ce30169457ff358b47535) or [WETH](https://app.cabana.fi/vault/8453/0x23Cd31beEc8980E7F8AEb7E76D45Fe3da4de1592) into one of our PoolTogether pools.
    - You can remove your deposit at any time
-2. Follow the [/blackflag channel](https://warpcast.com/~/channel/blackflag) on Warpcast
+2. Follow the [/blackflag channel](https://farcaster.xyz/~/channel/blackflag) on Farcaster
 3. Vote in the [monthly Snapshot](https://snapshot.box/#/s:black-flag.eth)
 
 </div>
@@ -49,11 +49,11 @@ Voters get to decide which events get funded.
     </a>
 </div>
 
-This initiative is managed using a [Multisig](https://basescan.org/address/0xc9Dd18f35E406Bf94cf937c6aAE618D7e84A6A6d) with 2 signers: [@links](https://warpcast.com/links) and [@icedcool](https://warpcast.com/icedcool).
+This initiative is managed using a [Multisig](https://basescan.org/address/0xc9Dd18f35E406Bf94cf937c6aAE618D7e84A6A6d) with 2 signers: [@links](https://farcaster.xyz/links) and [@icedcool](https://farcaster.xyz/icedcool).
 
 ## Official Links
 
-- [Farcaster](https://warpcast.com/~/channel/blackflag)
+- [Farcaster](https://farcaster.xyz/~/channel/blackflag)
 - [Discord](https://discord.gg/blackflagdao)
 - [Snapshot](https://snapshot.box/#/s:black-flag.eth)
 - [USDC Vault](https://app.cabana.fi/vault/8453/0x119d2bc7bb9b94f5518ce30169457ff358b47535)

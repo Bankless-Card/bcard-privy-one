@@ -333,3 +333,8 @@ a.sponsor img {
   margin-right: 0.3em;
   vertical-align: middle;
 }
+
+/* Hide Next.js toast notifications */
+.nextjs-toast {
+  display: none !important;
+}

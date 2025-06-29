@@ -9,7 +9,7 @@ export default function LandingPage({ markdownContent }: { markdownContent: stri
   return (
     <>
       <Head>
-        <title>Black Flag · BCard</title>
+        <title>We are the Black Flag</title>
       </Head>
 
       <div className="bf-theme min-h-screen flex flex-col">

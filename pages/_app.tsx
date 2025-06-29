@@ -40,7 +40,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         <link rel="apple-touch-icon" href={`${assetPrefix}/favicons/apple-touch-icon.png`} />
         <link rel="manifest" href={`${assetPrefix}/favicons/manifest.json`} />
 
-        <title>BCard · Black Flag</title>
+        <title>We are the Black Flag</title>
         <meta name="description" content="BCard integration with Black Flag" />
       </Head>
       {/* <PrivyProvider
