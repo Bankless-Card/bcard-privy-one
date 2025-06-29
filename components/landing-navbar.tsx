@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Logo } from './logo';
 import { getRoute } from '../utils/routes';
 import { useState } from 'react';
 
