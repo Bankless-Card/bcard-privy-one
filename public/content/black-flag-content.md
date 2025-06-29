@@ -54,7 +54,7 @@ This initiative is managed using a [Multisig](https://basescan.org/address/0xc9D
 ## Official Links
 
 - [Farcaster](https://farcaster.xyz/~/channel/blackflag)
-- [Discord](https://discord.gg/blackflagdao)
+- [Discord](https://discord.gg/UtZJ3NB5QT)
 - [Snapshot](https://snapshot.box/#/s:black-flag.eth)
 - [USDC Vault](https://app.cabana.fi/vault/8453/0x119d2bc7bb9b94f5518ce30169457ff358b47535)
 - [WETH Vault](https://app.cabana.fi/vault/8453/0x23Cd31beEc8980E7F8AEb7E76D45Fe3da4de1592)

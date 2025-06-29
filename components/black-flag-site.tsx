@@ -83,7 +83,7 @@ const MarkdownRenderer = ({ markdown }: { markdown: string }) => {
                 h2: ({ node, ...props }) => <h2 className=" " {...props} />,
                 h3: ({ node, ...props }) => <h3 className="" {...props} />,
                 p: ({ node, ...props }) => <p className="" {...props} />,
-                a: ({ node, ...props }) => <a className="" {...props} />,
+                a: ({ node, ...props }) => <a className="" target="_blank" rel="noopener noreferrer" {...props} />,
                 ul: ({ node, ...props }) => <ul className="" {...props} />,
                 ol: ({ node, ...props }) => <ol className="" {...props} />,
                 li: ({ node, ...props }) => <li className="" {...props} />,

@@ -169,6 +169,7 @@ a.sponsor img {
 /* Text elements */
 .bf-theme p {
   margin-bottom: 1rem;
+  margin-top: 1rem;
 }
 
 /* Lists */
@@ -332,9 +333,4 @@ a.sponsor img {
   font-size: 1.2em;
   margin-right: 0.3em;
   vertical-align: middle;
-}
-
-/* Hide Next.js toast notifications */
-.nextjs-toast {
-  display: none !important;
 }

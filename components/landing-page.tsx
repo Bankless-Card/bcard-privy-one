@@ -1,6 +1,6 @@
 import React from 'react';
 import Head from 'next/head';
-import LandingNavbar from './landing-navbar';
+//import LandingNavbar from './landing-navbar';
 import BlackFlagSite from './black-flag-site';
 import Footer from './footer';
 import Header from './header';
@@ -14,7 +14,7 @@ export default function LandingPage({ markdownContent }: { markdownContent: stri
 
       <div className="bf-theme min-h-screen flex flex-col">
         <Header />
-        <LandingNavbar />
+        {/* <LandingNavbar /> */}
         
         <main className="flex-grow">
           <BlackFlagSite markdownContent={markdownContent} />
