@@ -10,6 +10,7 @@ export default function LandingPage({ markdownContent }: { markdownContent: stri
     <>
       <Head>
         <title>We are the Black Flag</title>
+        <link rel="icon" href="/favicons/favicon.ico" />
       </Head>
 
       <div className="bf-theme min-h-screen flex flex-col">
