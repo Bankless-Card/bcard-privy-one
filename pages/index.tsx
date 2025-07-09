@@ -103,9 +103,8 @@ function UserWelcome() {
   );
 }
 
-// this runs at build time (`next build`) and on every request when using `next dev`
+//this runs at build time (`next build`) and on every request when using `next dev`
 export async function getStaticProps() {
-  // Get the markdown content from the file system at build time
   const markdownPath = path.join(process.cwd(), 'public', 'content', 'black-flag-content.md');
   const markdownContent = fs.readFileSync(markdownPath, 'utf8');
   
@@ -116,7 +115,6 @@ export async function getStaticProps() {
   };
 }
 
-// this runs at build time (`next build`) and on every request when using `next dev`
 export default function HomePage({ markdownContent }: { markdownContent: string }) {
   const { ready, authenticated } = usePrivy();
   const [shouldShowUserWelcome, setShouldShowUserWelcome] = useState(false);

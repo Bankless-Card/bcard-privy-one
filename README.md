@@ -38,6 +38,20 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to see your app.
 
+## Build and Deploy
+
+Run the export command to build the site to the `out` directory:
+```bash
+npm run export
+```
+
+Run the local server to test the exported site:
+```bash
+npx serve out
+```
+
+When you are satisfied, deploy to your host of choice.
+
 ## Deployment to GitHub Pages
 
 This project is configured for easy deployment to GitHub Pages.
@@ -72,8 +86,8 @@ The workflow file is located at `.github/workflows/nextjs.yml`.
 - `pages/`: Next.js pages
 - `styles/`: CSS styles, including the Black Flag theme
 - `public/`: Static files
+- `public/content/`: Markdown content files (can be accessed at `/content/{filename}`)
 - `utils/`: Utility functions, including routing helpers for GitHub Pages
-- `content/`: Content files for community-specific data output
 
 ## Base Path Handling
 
