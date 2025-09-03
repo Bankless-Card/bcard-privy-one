@@ -1,0 +1,29 @@
+.container {
+	display: flex;
+  	justify-content: space-between;
+  	align-items: center;
+}
+
+.header {
+	display: inline-block;
+}
+
+.button  {
+	display: inline-block;
+}
+
+@media (max-width: 750px) {
+  .container {
+    flex-direction: column-reverse; /* stack elements, title below login */
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .header {
+    text-align: center;
+  }
+
+  .button {
+  	align-self: flex-end;  
+  }
+}

@@ -1,8 +1,5 @@
 We are a user-run, in-real-life (IRL) social network of blockchain enthusiasts.
 
-
-{{component:LoginButton}}
-
 ## ![Black Flag](/images/black_flag_noclip.png) Mission 1: Real-World Meetups
 
 **We reward people around the world for holding in-real-life (IRL) meetups.** You can visit our [Snapshot space](https://snapshot.box/#/s:black-flag.eth) to participate in current funding decisions or see our previously funded events.

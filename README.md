@@ -52,11 +52,12 @@ npx serve out
 
 When you are satisfied, deploy to your host of choice.
 
-## Deployment to GitHub Pages
+
+### Deployment to GitHub Pages
 
 This project is configured for easy deployment to GitHub Pages.
 
-### Setting Up GitHub Repository Secrets
+#### Setting Up GitHub Repository Secrets
 
 Before deploying, add the following secrets to your GitHub repository:
 
@@ -80,13 +81,19 @@ This repository is set up with GitHub Actions for automatic deployment. Each pus
 
 The workflow file is located at `.github/workflows/nextjs.yml`.
 
+## Markdown and React
+
+Add static pages by adding them to `public/content/`.  They can be accessed on the site at `https://your_site_url/content/{filename}`.
+
+Static pages can include react components in `components/` by using `{{component:component_name}}` in your markdown.
+
 ## File Structure
 
 - `components/`: React components for the UI
 - `pages/`: Next.js pages
 - `styles/`: CSS styles, including the Black Flag theme
 - `public/`: Static files
-- `public/content/`: Markdown content files (can be accessed at `/content/{filename}`)
+- `public/content/`: Markdown content files
 - `utils/`: Utility functions, including routing helpers for GitHub Pages
 
 ## Base Path Handling

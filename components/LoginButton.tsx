@@ -1,3 +1,4 @@
+import styles from './LoginButton.module.css';
 import { useLogin, useLogout, usePrivy } from "@privy-io/react-auth";
 import { useRouter } from "next/router";
 import { getRoute } from "../utils/routes";
@@ -13,7 +14,7 @@ export default function LoginButton() {
       setShowLogout(false);
     }
   })
-  const { ready, authenticated } = usePrivy();
+  const { ready, authenticated, user } = usePrivy();
   const [showLogout, setShowLogout] = useState(false);
 
   // Check authentication status and redirect if already logged in
@@ -24,20 +25,19 @@ export default function LoginButton() {
   }, [ready, authenticated]);
 
   if (showLogout) {
-
     return (
       <button
-          className="bf-button text-lg py-3 px-8"
+          className={styles.button}
           onClick={logout}
         >
-          Logout
+          {user?.email?.address} Logout
       </button>
     );
   }
 
   return (
     <button
-        className="bf-button text-lg py-3 px-8"
+        className={styles.button}
         onClick={login}
       >
         Login
