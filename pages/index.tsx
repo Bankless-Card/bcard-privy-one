@@ -134,5 +134,6 @@ export default function HomePage({ markdownContent }: { markdownContent: string 
     );
   }
 
-  return shouldShowUserWelcome ? <UserWelcome /> : <LandingPage markdownContent={markdownContent} />;
+  //return shouldShowUserWelcome ? <UserWelcome /> : <LandingPage markdownContent={markdownContent} />;
+  return <LandingPage markdownContent={markdownContent} />;
 }
