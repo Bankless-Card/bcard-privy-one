@@ -43,9 +43,9 @@ Voters get to decide which events get funded.
         <img src="/images/bcard-logo.png" alt="BCard Foundation">
         <br/> BCard Foundation
     </a>
-    <a href="https://blackflagdao.notion.site/" class="sponsor" target="_blank">
-        <img src="/images/bfd-logo.png" alt="Black Flag DAO">
-        <br/> Black Flag DAO
+    <a href="https://bankless.notion.site/" class="sponsor" target="_blank">
+        <img src="/images/banklessdao_logo.png" alt="BanklessDAO">
+        <br/> BanklessDAO
     </a>
 </div>
 
