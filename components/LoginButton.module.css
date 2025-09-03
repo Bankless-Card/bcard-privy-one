@@ -1,7 +1,7 @@
 .button {
   display: inline-block;
-  background-color: transparent;
-  color: var(--bf-text);
+  background-color: var(--bf-text);
+  color: var(--bf-background);
   border: 1px solid var(--bf-text);
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
@@ -14,6 +14,10 @@
 }
 
 .button:hover {
-  background-color: var(--bf-text);
-  color: var(--bf-background);
+  background-color: transparent;
+  color: var(--bf-text);
+}
+
+.button:active {
+  text-decoration: none;
 }
