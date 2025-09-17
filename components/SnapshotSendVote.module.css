@@ -1,0 +1,247 @@
+.SendVoteCTA {
+    cursor: pointer;
+    margin-bottom: 5px;
+}
+
+.VoteDescription {
+    color: #333;
+    font-size: 0.9em;
+    overflow: hidden;
+}
+
+.VoteDescription h1, .VoteDescription h2, .VoteDescription h3, .VoteDescription h4 {
+    margin: 0.75em 0em 0.1em 0em;
+    color: #333;
+}
+
+.VoteDescription p {
+    margin: 0em;
+    margin-bottom: 0.1em;
+}
+
+.VoteDescription h1 {
+    font-size: 1.2em;
+}
+
+.VoteDescription h2 {
+    font-size: 1.1em;
+}
+
+.VoteDescription h3 {
+    font-size: 1em;
+}
+
+.VoteDescription h4 {
+    font-size: 0.9em;
+}
+
+
+.buttonContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-top: 20px;
+    padding-left: 5%;
+    padding-right: 5%;
+}
+
+.weightedContainer {
+    margin-top: 20px;
+}
+
+.weightedContainerButton {
+    width: 94%;
+    margin-left: 3%;
+    margin-right: 3%;
+}
+
+
+.snapLink {
+    display: block;
+    float: right;
+}
+
+.WeightedVotingConfirmContainer {
+    margin-left:auto;
+    margin-right:auto;
+    max-width: 90%;
+}
+
+.WeightedVotingConfirm {
+    margin-bottom: 5px;
+}
+
+.confirmVoteButtons {
+    display: flex;
+    justify-content: space-evenly;
+    margin-top: 10px;
+}
+
+.confirmVoteButtons a, .confirmVoteButtons Button {
+    width: 50%;
+}
+
+.inputTextbox {
+    width: 100%;
+    min-height: 50px;
+    margin-top: 10px;
+}
+
+.cancelNav {
+    cursor: pointer;
+    margin-top: 8px;
+    display: inline-block;
+    text-align: center;
+}
+
+.widthTable {
+    width: 100%;
+}
+
+.floatRight {
+    float: right;
+    margin: 5px 5% 5px 0px;
+    font-size: 0.9em;
+}
+
+.linkable {
+    cursor: pointer;
+}
+
+.changeVoteLink {
+    cursor: pointer;
+    font-size: 0.8em;
+    display: inline-block;
+    margin-left: 3%;
+}
+
+.voteModal {
+
+}
+
+.FancyButton {
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px 20px 10px 0;
+
+    border-bottom: 1px solid grey;
+    border-bottom-right-radius: 10px;
+}
+
+.WeightedVotingButton {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px 20px 10px 10px;
+    border: solid 1px #333;
+    border-radius: 30px;
+    margin-bottom: 5px;
+}
+
+.countButtons {
+    cursor: pointer;
+    font-weight: 700;
+    text-decoration: none;
+    text-align: center;
+    display: inline-block;
+    width: 25px;
+    height: 25px;
+    border: 2px solid #333;
+    border-radius: 12.5px;
+}
+
+.countDisplay {
+    display: inline-block;
+    width: 25px;
+    text-align: center;
+}
+
+.weightedButtonContainer {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+.infoModalContainer {
+	height: 100%;
+    padding-bottom: 80px;
+    padding-left: 20px;
+    padding-right: 20px;
+	display: flex; 
+    flex-direction: column;
+    align-items: center; 
+    justify-content: center;	
+}
+
+.emoji {
+    font-size: 100px;
+}
+
+.voteModalContainer {
+    padding: 20px;
+    height: 500px;
+}
+
+.voteModalInfo {
+    line-height: 1.4em;
+    font-size: 0.9em;
+}
+
+.spaceLabel {
+    float: right;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    padding: 1px;
+    background: #BE2BAE;
+    color: white;
+    border-radius: 0 13px 0 0;
+    max-width: 50px;
+}
+
+.resultContainer {
+    margin-top: 10px;
+}
+
+.resultContainer h4 {
+    margin-bottom: 5px;
+    margin-top: 5px;
+}
+
+.resultRow {
+    font-size: 0.9em;
+    width: 95%;
+    height: 1.5em;
+    position: relative;
+    margin-bottom: 5px;
+    margin-left: 2.5%;
+    margin-right: 2.5%;
+}
+
+.resultBar {
+    width: 100%;
+    height: 100%;
+    background: #b1a3af;
+    position: absolute;
+    border-radius: 3px;
+}
+
+.resultText {
+    position: absolute;
+    top: 0px;
+    left: 8px;
+    height: 100%;
+    line-height: 1.5em;
+}
+
+.resultPercentage {
+    position: absolute;
+    right: 8px;
+    height: 100%;
+    line-height: 1.5em;
+}

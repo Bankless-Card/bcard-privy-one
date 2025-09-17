@@ -14,18 +14,24 @@
     "deploy": "next build && next export && touch out/.nojekyll && gh-pages -d out -t true"
   },
   "dependencies": {
+    "@ethersproject/providers": "^5.8.0",
     "@headlessui/react": "^1.7.3",
     "@heroicons/react": "^2.0.12",
     "@privy-io/react-auth": "2.8.0",
     "@privy-io/server-auth": "1.21.2",
+    "@snapshot-labs/snapshot.js": "^0.12.65",
     "@tailwindcss/forms": "^0.5.3",
+    "date-fns": "^4.1.0",
     "gray-matter": "^4.0.3",
+    "marked": "^15.0.12",
     "next": "latest",
     "raw-loader": "^4.0.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-markdown": "^10.1.0",
-    "rehype-raw": "^7.0.0"
+    "rehype-raw": "^7.0.0",
+    "viem": "^2.37.6",
+    "web3": "^4.16.0"
   },
   "devDependencies": {
     "@tsconfig/next": "^2.0.0",

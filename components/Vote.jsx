@@ -1,0 +1,167 @@
+import styles from './Vote.module.css';
+import SnapshotSendVote from './SnapshotSendVote';
+import { useState, useEffect } from 'react';
+
+const QUERY_URL = "https://hub.snapshot.org/graphql?query=%0Aquery%20Spaces%20%7B%0A%20%20spaces(%0A%20%20%20%20first%3A%2020%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20about%0A%20%20%20%20network%0A%20%20%20%20symbol%0A%20%20%20%20strategies%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20network%0A%20%20%20%20%20%20params%0A%20%20%20%20%7D%0A%20%20%20%20admins%0A%20%20%20%20moderators%0A%20%20%20%20members%0A%20%20%20%20filters%20%7B%0A%20%20%20%20%20%20minScore%0A%20%20%20%20%20%20onlyMembers%0A%20%20%20%20%7D%0A%20%20%20%20plugins%0A%20%20%7D%0A%7D%0A%0Aquery%20Proposals%20%7B%0A%20%20proposals(%0A%20%20%20%20first%3A%2020%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20space_in%3A%20%5B%22tranmer.eth%22%5D%0A%20%20%20%20%7D%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20title%0A%20%20%20%20body%0A%20%20%20%20choices%0A%20%20%20%20start%0A%20%20%20%20end%0A%20%20%20%20snapshot%0A%20%20%20%20state%0A%20%20%20%20author%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0Aquery%20Votes%20%7B%0A%20%20votes%20(%0A%20%20%20%20first%3A%201000%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20proposal%3A%20%22QmPvbwguLfcVryzBRrbY4Pb9bCtxURagdv1XjhtFLf3wHj%22%0A%20%20%20%20%7D%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0Aquery%20Follows%20%7B%0A%20%20follows%20(where%3A%20%7B%20follower%3A%20%220xeF8305E140ac520225DAf050e2f71d5fBcC543e7%22%20%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20follower%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%20%20created%0A%20%20%7D%0A%7D%0A&operationName=Proposals";
+
+export default function Vote({ }) {
+
+	const [votes, setVotes] = useState([]);
+	const [proposals, setProposals] = useState([]);
+
+
+	useEffect(() => {
+
+		async function init() {
+			let p = await getProposals();
+			console.log(p)
+			// setProposals(p);
+		}
+
+		init();
+
+	}, []);
+
+	async function getProposals() {
+
+		// first need a list of eligible spaces to check for proposals
+		// then need to get the proposals for each space (LIMIT: 5)
+		// then need to get the votes for each proposal (LIMIT: 10)
+
+
+
+		try {
+	
+			// this currently takes a query that returns data from the tranmer.eth space and all proposals contained therin.
+			// will need one for each community that has proposals & votes.
+			// will need tokens for each community that has proposals & votes.
+
+			// let spaceList = 'tranmer.eth';
+			// let spaceList = 'banklessvault.eth","tranmer.eth';		// double quotes around each space name (start and end quotes are hard coded so this is not needed for a single space request)
+			let spaceList = 'black-flag.eth';		// double quotes around each space name (start and end quotes are hard coded so this is not needed for a single space request)
+			let propNum = "5";
+
+			const SNAPSHOT_QUERY_ROUTE = "/api/bc/snap-query";
+
+			//let htmlQuery = "%0Aquery%20Proposals%20%7B%0A%20%20proposals(%0A%20%20%20%20first%3A%20"+propNum+"%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20space_in%3A%20%5B%22"+spaceList+"%22%5D%0A%20%20%20%20%7D%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20title%0A%20%20%20%20body%0A%20%20%20%20choices%0A%20%20%20%20start%0A%20%20%20%20end%0A%20%20%20%20snapshot%0A%20%20%20%20state%0A%20%20%20%20author%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Proposals";		// html encoded for address posting
+			let htmlQuery = "%0Aquery%20Proposals%20%7B%0A%20%20proposals(%0A%20%20%20%20first%3A%20"+propNum+"%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20space_in%3A%20%5B%22"+spaceList+"%22%5D%0A%20%20%20%20%7D%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20title%0A%20%20%20%20body%0A%20%20%20%20type%0A%20%20%20%20choices%0A%20%20%20%20start%0A%20%20%20%20end%0A%20%20%20%20snapshot%0A%20%20%20%20state%0A%20%20%20%20author%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Proposals";		// html encoded for address posting
+			let buildQuery = "https://hub.snapshot.org/graphql?query=%0Aquery%20Proposals%20%7B%0A%20%20proposals(%0A%20%20%20%20first%3A%20"+propNum+"%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20space_in%3A%20%5B%22"+spaceList+"%22%5D%0A%20%20%20%20%7D%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20title%0A%20%20%20%20body%0A%20%20%20%20choices%0A%20%20%20%20start%0A%20%20%20%20end%0A%20%20%20%20snapshot%0A%20%20%20%20state%0A%20%20%20%20author%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Proposals";
+
+			// await fetch(QUERY_URL)
+			// await fetch(buildQuery)
+			await fetch(SNAPSHOT_QUERY_ROUTE, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					query: "spaces",
+					q: htmlQuery
+				})
+			})
+			.then(response => response.json())
+			.then(data => {
+				// console.log(data.data);
+
+				let proposals = data.data.data.proposals;
+				// ge through each proposal and get the votes for each and add to data object
+				proposals.map(async (proposal) => {
+					// console.log(proposal.id);
+
+					let numVotes = 10;		// max number of votes to get
+
+					let votesQuery = "https://hub.snapshot.org/graphql?query=query%20Votes%20%7B%0A%20%20votes(first%3A%20"+numVotes+"%2C%20where%3A%20%7Bproposal%3A%20%22" +
+					proposal.id+"%22%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20vp%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Votes";
+				
+					let intVoteQuery = "query%20Votes%20%7B%0A%20%20votes(first%3A%20"+numVotes+"%2C%20where%3A%20%7Bproposal%3A%20%22" +
+					proposal.id+"%22%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20vp%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Votes";
+
+
+					await fetch(SNAPSHOT_QUERY_ROUTE, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							"authorization": "internal-auth"
+						},
+						body: JSON.stringify({
+							query: "votes",
+							q: intVoteQuery
+						})
+					})
+					.then(response => response.json())
+					.then(data => {
+						// console.log(data.data);
+						// setVoteChoices(data.data.votes);
+						proposal.votes = data.data.data.votes;
+					});  
+				});    
+
+				console.log(proposals);		// verify that all have votes added
+				setProposals(proposals);		// set all proposals with votes for available access
+				return proposals;
+
+			});       // here we can see the data from the snapshot API, but the url is a beast... to be simplified
+			/* output data is great; has data.proposals: [ array of proposals ]
+			
+			title is the title
+			body is the message
+			choices is an array of choices, with string labels
+			id is hash of proposal
+			snapshot is the snapshot ID
+			space has {id, name}
+			start and end are unixtime
+			state is 'active' or 'closed'
+	
+			*/
+
+			
+	
+		} catch (e) {
+			console.log(e);
+		}
+	}
+
+
+	return (
+		<div className={styles.VotePageContainer}>
+
+		
+			{/* for each proposal in the proposals array, create a SnapshotSendVote component */}
+			{proposals && proposals.length > 0 && 
+				proposals.map((proposal, index) => {
+
+					if(!proposal) {
+						// wait for voting data to be loaded
+					} else {
+
+					// show all proposals and filter for inactive within component display
+						return (
+							<SnapshotSendVote
+								title={proposal.title}
+								CTAs={proposal.choices}
+								token="BANK"
+								url={"https://snapshot.box/#/s:"+proposal.space.id+"/proposal/"+proposal.id}
+								space={proposal.space.id}
+								proposal={proposal.id}
+								snaptime={proposal.start}
+								endtime={proposal.end}
+								votes={proposal.votes}
+								voteWallet='privy'		// set to privy for embedded, all others will give personal
+								propDump={proposal}
+								key={index}
+							>
+								{proposal.body}
+							</SnapshotSendVote>
+
+							
+						) 
+
+					}
+				})
+			}
+
+		</div>
+	);
+
+	
+} //end export

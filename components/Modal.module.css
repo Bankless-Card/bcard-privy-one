@@ -1,0 +1,52 @@
+
+.Modal {
+	/* stretch to full size */
+	overflow: hidden;
+	position: fixed;   
+	top: 0;            
+	left: 0;           
+	width: 100%;     
+	height: 100%;      
+	margin: 0;         
+	padding: 0;   
+	z-index: 100;
+
+	background-color: #F8F8F8; 
+}
+
+.BackButton {
+    cursor: pointer;
+    position: absolute;
+    top: 20px;
+    left: 20px;	
+
+	display: inline-block;
+	width: 40px;
+	height: 34px;
+	text-align: center;
+	padding-top: 10px;
+
+}
+
+.ModalTitle {
+    position: absolute;
+    top: 28px;	/* start centered with back button */
+    left: 60px;  /* start after back button */
+    width: calc(100% - 120px);
+    text-align:center;
+    font-size: 1.2em;
+    margin: 0px auto;
+    font-weight: bold;
+    color: #313131;
+}
+
+.ModalContent {
+	padding: 80px 0px 0px 0px;
+	height: 100%;
+	overflow: hidden;	
+}
+
+.ModalContentScrollable {
+	height: 100%;
+	overflow-y:auto;
+}

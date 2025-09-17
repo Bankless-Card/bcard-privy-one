@@ -2,6 +2,7 @@ import React from 'react';
 import Head from 'next/head';
 //import LandingNavbar from './landing-navbar';
 import BlackFlagSite from './black-flag-site';
+import Vote from './Vote';
 import Footer from './footer';
 import Header from './header';
 
@@ -18,6 +19,7 @@ export default function LandingPage({ markdownContent }: { markdownContent: stri
         {/* <LandingNavbar /> */}
         
         <main className="flex-grow">
+          <Vote />
           <BlackFlagSite markdownContent={markdownContent} />
         </main>
         
