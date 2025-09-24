@@ -14,7 +14,7 @@ export default function Vote({ }) {
 
 		async function init() {
 			let p = await getProposals();
-			console.log(p);
+			//console.log(p);
 			setProposals(p);
 		}
 
@@ -97,8 +97,7 @@ export default function Vote({ }) {
 			// Wait for all vote fetching to complete
 			await Promise.all(votePromises);
 
-			console.log(proposals);		// verify that all have votes added
-			//setProposals(proposals);		// set all proposals with votes for available access
+			//console.log(proposals);		// verify that all have votes added
 			return proposals;
 
 			/* output data is great; has data.proposals: [ array of proposals ]
@@ -123,6 +122,7 @@ export default function Vote({ }) {
 
 	return (
 		<div className={styles.VotePageContainer}>
+			<h3>Votes</h3>
 
 		
 			{/* for each proposal in the proposals array, create a SnapshotSendVote component */}
@@ -135,23 +135,24 @@ export default function Vote({ }) {
 
 					// show all proposals and filter for inactive within component display
 						return (
-							<SnapshotSendVote
-								title={proposal.title}
-								CTAs={proposal.choices}
-								token="BANK"
-								url={"https://snapshot.box/#/s:"+proposal.space.id+"/proposal/"+proposal.id}
-								space={proposal.space.id}
-								proposal={proposal.id}
-								snaptime={proposal.start}
-								endtime={proposal.end}
-								votes={proposal.votes}
-								voteWallet='privy'		// set to privy for embedded, all others will give personal
-								propDump={proposal}
-								key={index}
-							>
-								{proposal.body}
-							</SnapshotSendVote>
-
+							<div className={styles.snapshotContainer} key={index}>
+								<SnapshotSendVote
+									title={proposal.title}
+									CTAs={proposal.choices}
+									token="BANK"
+									url={"https://snapshot.box/#/s:"+proposal.space.id+"/proposal/"+proposal.id}
+									space={proposal.space.id}
+									proposal={proposal.id}
+									snaptime={proposal.start}
+									endtime={proposal.end}
+									votes={proposal.votes}
+									voteWallet='privy'		// set to privy for embedded, all others will give personal
+									propDump={proposal}
+									key={index}
+								>
+									{proposal.body}
+								</SnapshotSendVote>
+							</div>
 							
 						) 
 

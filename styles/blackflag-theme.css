@@ -23,7 +23,7 @@ body {
   padding: 20px;
   color: var(--bf-text);
   background-color: var(--bf-background);
-  line-height: 1;
+  line-height: 1.5;
 }
 header {
   text-align: center;
@@ -108,7 +108,9 @@ a.sponsor img {
 
 /* Base styles */
 .bf-theme {
-
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Header styles */
@@ -167,7 +169,7 @@ a.sponsor img {
 }
 
 /* Text elements */
-.bf-theme p {
+p {
   margin-bottom: 1rem;
   margin-top: 1rem;
 }
@@ -192,7 +194,7 @@ a.sponsor img {
 }
 
 /* Links */
-.bf-theme a {
+a {
   color: var(--bf-text);
   text-decoration: underline;
   text-underline-offset: 3px;

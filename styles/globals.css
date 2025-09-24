@@ -1,6 +1,20 @@
 @tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 /* Import Black Flag theme */
 @import "./blackflag-theme.css";
+
+.sidebar {
+	width: 400px;
+	flex-shrink: 0;
+	padding-bottom: 20px;
+}
+
+.content-container {
+	display: flex;
+	flex-grow: 1;
+	gap: 20px;
+}
+
+.main-content {
+	flex-grow: 1;
+}

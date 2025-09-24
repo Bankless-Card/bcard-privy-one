@@ -593,6 +593,7 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
                 <p className={styles.floatRight}>
                     {isEnded(endtime) ? "ended " + snapToNice(endtime) + " ago" : "...ends in " + snapToNice(endtime)}
                 </p>
+                <a className={styles.snapshotLink} href={url} target="_blank">View on Snapshot</a>
             </div>
         );
     }
@@ -620,6 +621,7 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
                     }
                     {myVote && <a className={styles.changeVoteLink} onClick={() => setVoteProcess(VOTE_PROCESS.COMPLETE)}>Show Results</a>}
                     <p className={styles.floatRight}>...ends in {snapToNice(endtime)}</p>
+                    <a className={styles.snapshotLink} href={url} target="_blank">View on Snapshot</a>
                 </div>
                 {voteProcess === VOTE_PROCESS.INIT &&
                     <Modal backButtonClickHandler={() => resetVote()} className={styles.voteModal}>

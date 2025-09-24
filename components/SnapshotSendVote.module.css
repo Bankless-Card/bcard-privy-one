@@ -100,7 +100,7 @@
 
 .floatRight {
     float: right;
-    margin: 5px 5% 5px 0px;
+    margin: 0.5rem 5% 0.5rem 0px;
     font-size: 0.9em;
 }
 
@@ -113,6 +113,14 @@
     font-size: 0.8em;
     display: inline-block;
     margin-left: 3%;
+}
+
+.snapshotLink {
+    cursor: pointer;
+    display: block;
+    width: 100%;
+    clear: both;
+    text-align: center;
 }
 
 .voteModal {
@@ -154,6 +162,13 @@
     border-radius: 12.5px;
 }
 
+a.countButtons:link,
+a.countButtons:hover,
+a.countButtons:active,
+a.countButtons:visited {
+    text-decoration: none;
+}
+
 .countDisplay {
     display: inline-block;
     width: 25px;
@@ -193,12 +208,13 @@
 }
 
 .spaceLabel {
+    display: none;
     float: right;
     position: absolute;
     top: 0px;
     right: 0px;
     padding: 1px;
-    background: #BE2BAE;
+    background: #000;
     color: white;
     border-radius: 0 13px 0 0;
     max-width: 50px;

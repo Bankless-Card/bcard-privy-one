@@ -1,3 +1,13 @@
 .VotePageContainer {
     padding: 0px;
 }
+
+.snapshotContainer {
+    display: inline-block;
+    position: relative;
+    border: solid 1px #000;
+    border-radius: 13px;
+    padding: 10px;
+    margin-bottom: 20px;
+    font-size: 0.9em;
+}

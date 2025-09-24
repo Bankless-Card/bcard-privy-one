@@ -14,14 +14,19 @@ export default function LandingPage({ markdownContent }: { markdownContent: stri
         <link rel="icon" href="/favicons/favicon.ico" />
       </Head>
 
-      <div className="bf-theme min-h-screen flex flex-col">
+      <div className="bf-theme">
         <Header />
         {/* <LandingNavbar /> */}
         
-        <main className="flex-grow">
-          <Vote />
-          <BlackFlagSite markdownContent={markdownContent} />
-        </main>
+        <div className="content-container">
+          <main className="main-content">
+            <BlackFlagSite markdownContent={markdownContent} />
+          </main>
+
+          <div className="sidebar">
+            <Vote />
+          </div>
+        </div>
         
         <Footer />
       </div>
