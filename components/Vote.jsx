@@ -14,8 +14,8 @@ export default function Vote({ }) {
 
 		async function init() {
 			let p = await getProposals();
-			console.log(p)
-			// setProposals(p);
+			console.log(p);
+			setProposals(p);
 		}
 
 		init();
@@ -28,8 +28,6 @@ export default function Vote({ }) {
 		// then need to get the proposals for each space (LIMIT: 5)
 		// then need to get the votes for each proposal (LIMIT: 10)
 
-
-
 		try {
 	
 			// this currently takes a query that returns data from the tranmer.eth space and all proposals contained therin.
@@ -41,7 +39,7 @@ export default function Vote({ }) {
 			let spaceList = 'black-flag.eth';		// double quotes around each space name (start and end quotes are hard coded so this is not needed for a single space request)
 			let propNum = "5";
 
-			const SNAPSHOT_QUERY_ROUTE = "/api/bc/snap-query";
+			const SNAPSHOT_QUERY_ROUTE = "https://stagetx.banklesscard.xyz/api/snapshot";
 
 			//let htmlQuery = "%0Aquery%20Proposals%20%7B%0A%20%20proposals(%0A%20%20%20%20first%3A%20"+propNum+"%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20space_in%3A%20%5B%22"+spaceList+"%22%5D%0A%20%20%20%20%7D%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20title%0A%20%20%20%20body%0A%20%20%20%20choices%0A%20%20%20%20start%0A%20%20%20%20end%0A%20%20%20%20snapshot%0A%20%20%20%20state%0A%20%20%20%20author%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Proposals";		// html encoded for address posting
 			let htmlQuery = "%0Aquery%20Proposals%20%7B%0A%20%20proposals(%0A%20%20%20%20first%3A%20"+propNum+"%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20space_in%3A%20%5B%22"+spaceList+"%22%5D%0A%20%20%20%20%7D%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20title%0A%20%20%20%20body%0A%20%20%20%20type%0A%20%20%20%20choices%0A%20%20%20%20start%0A%20%20%20%20end%0A%20%20%20%20snapshot%0A%20%20%20%20state%0A%20%20%20%20author%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Proposals";		// html encoded for address posting
@@ -49,7 +47,7 @@ export default function Vote({ }) {
 
 			// await fetch(QUERY_URL)
 			// await fetch(buildQuery)
-			await fetch(SNAPSHOT_QUERY_ROUTE, {
+			const response = await fetch(SNAPSHOT_QUERY_ROUTE, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -58,49 +56,51 @@ export default function Vote({ }) {
 					query: "spaces",
 					q: htmlQuery
 				})
-			})
-			.then(response => response.json())
-			.then(data => {
-				// console.log(data.data);
+			});
 
-				let proposals = data.data.data.proposals;
-				// ge through each proposal and get the votes for each and add to data object
-				proposals.map(async (proposal) => {
-					// console.log(proposal.id);
+			const data = await response.json();
+			// console.log(data.data);
 
-					let numVotes = 10;		// max number of votes to get
+			let proposals = data.data.data.proposals;
+			
+			// Wait for all vote fetching operations to complete
+			const votePromises = proposals.map(async (proposal) => {
+				// console.log(proposal.id);
 
-					let votesQuery = "https://hub.snapshot.org/graphql?query=query%20Votes%20%7B%0A%20%20votes(first%3A%20"+numVotes+"%2C%20where%3A%20%7Bproposal%3A%20%22" +
-					proposal.id+"%22%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20vp%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Votes";
-				
-					let intVoteQuery = "query%20Votes%20%7B%0A%20%20votes(first%3A%20"+numVotes+"%2C%20where%3A%20%7Bproposal%3A%20%22" +
-					proposal.id+"%22%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20vp%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Votes";
+				let numVotes = 10;		// max number of votes to get
 
+				let votesQuery = "https://hub.snapshot.org/graphql?query=query%20Votes%20%7B%0A%20%20votes(first%3A%20"+numVotes+"%2C%20where%3A%20%7Bproposal%3A%20%22" +
+				proposal.id+"%22%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20vp%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Votes";
+			
+				let intVoteQuery = "query%20Votes%20%7B%0A%20%20votes(first%3A%20"+numVotes+"%2C%20where%3A%20%7Bproposal%3A%20%22" +
+				proposal.id+"%22%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20vp%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Votes";
 
-					await fetch(SNAPSHOT_QUERY_ROUTE, {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							"authorization": "internal-auth"
-						},
-						body: JSON.stringify({
-							query: "votes",
-							q: intVoteQuery
-						})
+				const voteResponse = await fetch(SNAPSHOT_QUERY_ROUTE, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"authorization": "internal-auth"
+					},
+					body: JSON.stringify({
+						query: "votes",
+						q: intVoteQuery
 					})
-					.then(response => response.json())
-					.then(data => {
-						// console.log(data.data);
-						// setVoteChoices(data.data.votes);
-						proposal.votes = data.data.data.votes;
-					});  
-				});    
+				});
 
-				console.log(proposals);		// verify that all have votes added
-				setProposals(proposals);		// set all proposals with votes for available access
-				return proposals;
+				const voteData = await voteResponse.json();
+				// console.log(voteData.data);
+				// setVoteChoices(voteData.data.votes);
+				proposal.votes = voteData.data.data.votes;
+				return proposal;
+			});
 
-			});       // here we can see the data from the snapshot API, but the url is a beast... to be simplified
+			// Wait for all vote fetching to complete
+			await Promise.all(votePromises);
+
+			console.log(proposals);		// verify that all have votes added
+			//setProposals(proposals);		// set all proposals with votes for available access
+			return proposals;
+
 			/* output data is great; has data.proposals: [ array of proposals ]
 			
 			title is the title
@@ -114,10 +114,9 @@ export default function Vote({ }) {
 	
 			*/
 
-			
-	
 		} catch (e) {
 			console.log(e);
+			return []; // Return empty array on error
 		}
 	}
 
