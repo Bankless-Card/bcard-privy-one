@@ -25,7 +25,6 @@ npm install
 ```
 NEXT_PUBLIC_PRIVY_APP_ID=<your-privy-app-id>
 NEXT_PUBLIC_PRIVY_APP_CLIENT_ID=<your-privy-app-client-id>
-PRIVY_APP_SECRET=<your-privy-app-secret>
 ```
 
 ## Local Development

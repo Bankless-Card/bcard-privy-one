@@ -43,11 +43,13 @@ function MyApp({ Component, pageProps }: AppProps) {
         }}
       > */}
       <PrivyProvider
-        appId={"clot4yaxz06dll50fkodfgzh4"}
-        clientId={"client-WY2eJ3TxteESv8AvCio41QqM6fEwNqQA7rF9xevtfyfr2"}
+        appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID}
+        clientId={process.env.NEXT_PUBLIC_PRIVY_APP_CLIENT_ID}
         config={{
+          loginMethods: ['email'],
           embeddedWallets: {
             createOnLogin: "all-users",
+            showWalletUIs: false
           },
         }}
       >
