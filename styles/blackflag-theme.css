@@ -2,32 +2,31 @@
 
 :root {
   /* Color palette */
-  --bf-background: #57BCF2;  
-  --bf-text: #333333;        
-  --bf-accent: #ff5a5a;      
-  --bf-gray-dark: #1a1a1a;   
-  --bf-gray-medium: #333333; 
-  --bf-gray-light: #666666;  
+  --theme-background: #57BCF2;  
+  --theme-text: #333333;        
+  --theme-accent: #ff5a5a;      
+  --theme-gray-dark: #1a1a1a;   
+  --theme-gray-medium: #333333; 
+  --theme-gray-light: #666666;  
   
   /* Typography */
-  --bf-font-primary: "Courier New", "Lucida Console", monospace;
-  --bf-font-mono: 'Roboto Mono', monospace;
-  --bf-font-size: 16px;
+  --theme-font-primary: "Courier New", "Lucida Console", monospace;
+  --theme-font-mono: 'Roboto Mono', monospace;
 }
 
 
 /* A lot of this are overrides for Tailwind defaults */
 body {
-  font-family: var(--bf-font-primary);
+  font-family: var(--theme-font-primary);
   margin: 0;
   padding: 20px;
-  color: var(--bf-text);
-  background-color: var(--bf-background);
+  color: var(--theme-text);
+  background-color: var(--theme-background);
   line-height: 1.5;
 }
 header {
   text-align: center;
-  border-bottom: solid 8px var(--bf-text);
+  border-bottom: solid 8px var(--theme-text);
 }
 
 main {
@@ -132,7 +131,7 @@ a.sponsor img {
 /* Section styles */
 .bf-section {
   margin: 4rem 0;
-  border-top: 1px solid var(--bf-gray-medium);
+  border-top: 1px solid var(--theme-gray-medium);
   padding-top: 2rem;
 }
 
@@ -195,7 +194,7 @@ ul {
 
 /* Links */
 a {
-  color: var(--bf-text);
+  color: var(--theme-text);
   text-decoration: underline;
   text-underline-offset: 3px;
   transition: all 0.2s ease;
@@ -209,8 +208,8 @@ a:hover {
 .bf-button {
   display: inline-block;
   background-color: transparent;
-  color: var(--bf-text);
-  border: 1px solid var(--bf-text);
+  color: var(--theme-text);
+  border: 1px solid var(--theme-text);
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
   font-weight: 600;
@@ -222,14 +221,14 @@ a:hover {
 }
 
 .bf-button:hover {
-  background-color: var(--bf-text);
-  color: var(--bf-background);
+  background-color: var(--theme-text);
+  color: var(--theme-background);
 }
 
 /* Panels/Cards */
 .bf-panel {
-  background-color: var(--bf-gray-dark);
-  border: 1px solid var(--bf-gray-medium);
+  background-color: var(--theme-gray-dark);
+  border: 1px solid var(--theme-gray-medium);
   padding: 1.5rem;
   margin-bottom: 1.5rem;
 }
@@ -257,16 +256,16 @@ a:hover {
 .bf-footer {
   margin-top: 4rem;
   padding: 2rem 0;
-  border-top: 1px solid var(--bf-gray-medium);
+  border-top: 1px solid var(--theme-gray-medium);
   text-align: center;
   font-size: 0.875rem;
-  color: var(--bf-gray-light);
+  color: var(--theme-gray-light);
 }
 
 /* Code/mono text */
 .bf-mono {
-  font-family: var(--bf-font-mono);
-  background-color: var(--bf-gray-dark);
+  font-family: var(--theme-font-mono);
+  background-color: var(--theme-gray-dark);
   padding: 0.2rem 0.4rem;
   border-radius: 3px;
 }
@@ -325,8 +324,8 @@ a:hover {
 
 /* Highlight */
 .bf-highlight {
-  background-color: var(--bf-accent);
-  color: var(--bf-background);
+  background-color: var(--theme-accent);
+  color: var(--theme-background);
   padding: 0.1em 0.3em;
 }
 
