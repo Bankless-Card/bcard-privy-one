@@ -36,7 +36,7 @@ export default function Vote({ }) {
 
 			// let spaceList = 'tranmer.eth';
 			// let spaceList = 'banklessvault.eth","tranmer.eth';		// double quotes around each space name (start and end quotes are hard coded so this is not needed for a single space request)
-			let spaceList = 'black-flag.eth';		// double quotes around each space name (start and end quotes are hard coded so this is not needed for a single space request)
+			let spaceList = process.env.NEXT_PUBLIC_SNAPSHOT_SPACE_ID;		// double quotes around each space name (start and end quotes are hard coded so this is not needed for a single space request)
 			let propNum = "5";
 
 			const SNAPSHOT_QUERY_ROUTE = "https://stagetx.banklesscard.xyz/api/snapshot";
