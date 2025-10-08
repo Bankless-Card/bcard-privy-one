@@ -17,7 +17,6 @@
 .SecondaryButton {
 	background: linear-gradient(to right, #7675BC, #4C4BAA);
 	color: white;
-	cursor: not-allowed;
 }
 
 .DisabledButton {

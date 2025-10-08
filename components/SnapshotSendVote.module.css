@@ -98,6 +98,14 @@
     width: 100%;
 }
 
+.loginCallout  {
+    text-align: center;
+    font-size: 0.9em;
+    margin-top: 0px;
+    margin-bottom: 0.5rem;
+    clear: both;
+}
+
 .floatRight {
     float: right;
     margin: 0.5rem 5% 0.5rem 0px;

@@ -7,11 +7,15 @@ import { useEffect, useState } from "react";
 export default function LoginButton() {
   const router = useRouter();
   const { login } = useLogin({
-    onComplete: () => {},
+    onComplete: () => {
+      //we have these here to avoid having to consume login state in every other widget
+      window.location.reload();
+    },
   });
   const { logout } = useLogout({
     onSuccess: () => {
-      setShowLogout(false);
+      //setShowLogout(false);
+      window.location.reload();
     }
   })
   const { ready, authenticated, user } = usePrivy();

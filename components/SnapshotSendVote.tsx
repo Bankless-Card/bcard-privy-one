@@ -32,7 +32,17 @@ const VOTE_PROCESS = {
     "ERROR": "error"
 } as const;
 
+const VOTE_ERROR = {
+    "NONE": "none",
+    "NO_TOKENS": "no_tokens",
+    "NO_WALLET": "no_wallet",
+    "SNAPSHOT_FAIL": "snapshot_fail",
+    "UNKNOWN": "unknown"
+} as const;
+
 type VoteProcess = typeof VOTE_PROCESS[keyof typeof VOTE_PROCESS];
+type VoteError = typeof VOTE_ERROR[keyof typeof VOTE_ERROR];
+
 
 interface Vote {
     id: string;
@@ -114,6 +124,7 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
     const [personalAdr, setPersonalAdr] = useState<string | null>(null);
 
     const [voteProcess, setVoteProcess] = useState<VoteProcess>(VOTE_PROCESS.START);
+    const [voteError, setVoteError] = useState<VoteError>(VOTE_ERROR.NONE);
     const [voteVal, setVoteVal] = useState<number | null>(null);
     const [weightedVoteVal, setWeightedVoteVal] = useState<any | null>(null);
 
@@ -155,6 +166,14 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
         setVoteProcess(VOTE_PROCESS.VOTING);
 
         const reasonDOM = (document.getElementById("voteReason") as HTMLInputElement)?.value;
+
+        //if we don't have an address, we can't vote
+        if( embedAdr==null ) {
+            setVoteProcess(VOTE_PROCESS.ERROR);
+            setVoteError(VOTE_ERROR.NO_WALLET);
+        }
+
+        // POST: embedAdr exists
 
         if (choiceType === 'weighted') {
             const weightedChoiceOutput = getWeightedVotingValues();
@@ -587,12 +606,15 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
                         </div>
                     ))}
                 </div>
-                {!isEnded(endtime) &&
+                {!isEnded(endtime) && embedAdr!=null &&
                     <a className={styles.changeVoteLink} onClick={() => setVoteProcess(VOTE_PROCESS.IDLE)}>Change Vote</a>
                 }
                 <p className={styles.floatRight}>
                     {isEnded(endtime) ? "ended " + snapToNice(endtime) + " ago" : "...ends in " + snapToNice(endtime)}
                 </p>
+                {!isEnded(endtime) && embedAdr==null &&
+                    <p className={styles.loginCallout}><strong>login to vote</strong></p>
+                }
                 <a className={styles.snapshotLink} href={url} target="_blank">View on Snapshot</a>
             </div>
         );
@@ -683,12 +705,31 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
     }
 
     function RenderErrorModal() {
+
+        var errorFirstLine = "Something went wrong with your vote. Please try again.";
+        var errorSecondLine = "It was probably our fault, reach out if you need help.";
+
+        switch(voteError) {
+            case VOTE_ERROR.NO_WALLET:
+                errorFirstLine = "You aren't logged in.";
+                errorSecondLine = "Please log in and try again.";
+                break;
+
+            case VOTE_ERROR.NO_TOKENS:
+                errorFirstLine = "You don't have any voting power.";
+                errorSecondLine = "Reach out to your community leader to get voting power.";
+                break;
+
+            default:
+                break;         
+        }
+
         return (
             <Modal backButtonClickHandler={() => setVoteProcess(VOTE_PROCESS.COMPLETE)}>
                 <div className={styles.infoModalContainer}>
-                    <h2>Something went wrong with your vote. Please try again.</h2>
+                    <h2>{errorFirstLine}</h2>
                     <div className={styles.emoji}>😓</div>
-                    <h3>It was probably our fault, reach out if you need help.</h3>
+                    <h3>{errorSecondLine}</h3>
                     <Button buttonFunction={() => { setVoteProcess(VOTE_PROCESS.COMPLETE); }} buttonText={"Close"}></Button>
                 </div>
             </Modal>
@@ -709,6 +750,9 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
         case VOTE_PROCESS.ERROR:
             return <RenderErrorModal />;
         default:
+            if( embedAdr==null )
+                return <RenderVoteResults />
+
             return <RenderVotableSummary />;
     }
 };
