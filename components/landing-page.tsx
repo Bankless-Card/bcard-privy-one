@@ -3,6 +3,7 @@ import Head from 'next/head';
 //import LandingNavbar from './landing-navbar';
 import BlackFlagSite from './black-flag-site';
 import Vote from './Vote';
+import Deposit from './Deposit';
 import Footer from './footer';
 import Header from './header';
 
@@ -25,6 +26,7 @@ export default function LandingPage({ markdownContent }: { markdownContent: stri
 
           <div className="sidebar">
             <Vote />
+            <Deposit />
           </div>
         </div>
         
