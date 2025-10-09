@@ -28,7 +28,17 @@ export default function Deposit() {
 					// Base chain = chainId 8453
 					const privyProvider = await wallet.getEthereumProvider();
 					console.debug('Privy provider:', privyProvider);
-					const provider = new BrowserProvider(privyProvider, 8453);
+					const provider = new BrowserProvider(privyProvider);
+					const network = await provider.getNetwork();
+				    if (Number(network.chainId) !== 8453) {
+						console.log(`Wallet is on wrong network: ${network.chainId}. Expected 8453 (Base).`);
+						// alert('Please switch your wallet to the Base network (chainId 8453) to use Deposit.');
+						// setWalletAddress(null);
+						// setUsdcBalance(null);
+						// return;
+
+                        await wallet.switchChain(8453);
+					}
 					const signer = await provider.getSigner();
 					const address = await signer.getAddress();
 					console.debug("Wallet address:", address);
