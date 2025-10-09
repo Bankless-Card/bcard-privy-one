@@ -212,7 +212,7 @@ export default function Deposit() {
 
 	return (
 		<div style={{ display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
-			<p>Welcome! You are logged in.</p>
+			<p>Inteact with USDC Vault</p>
 			<div>Your USDC balance on Base: {usdcBalance === null ? 'Loading...' : usdcBalance}</div>
 			<div>Your ETH balance on Base: {ethBalance === null ? 'Loading...' : ethBalance}</div>
 			<div>Your Vault deposit balance: {vaultBalance === null ? 'Loading...' : vaultBalance}</div>
@@ -220,8 +220,17 @@ export default function Deposit() {
 			{approvalSuccess && <div style={{ color: 'green' }}>Approval successful!</div>}
 			{depositStatus && <div style={{ color: depositSuccess ? 'green' : 'red' }}>{depositStatus}</div>}
 			{usdcBalance !== null && usdcBalance > 0 && ethBalance !== null && ethBalance > 0 && (
-				<button onClick={handleDeposit} disabled={depositLoading || approvalLoading}>
-					{depositLoading ? (depositStatus || 'Depositing...') : 'Deposit to USDC Vault'}
+				<button onClick={handleDeposit} disabled={depositLoading || approvalLoading} style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}>
+					{depositLoading ? (depositStatus || 'Depositing...') : <>
+						Deposit to USDC Vault
+						<span style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
+							{/* Down arrow SVG icon */}
+							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M5 8L10 13L15 8" stroke="#222" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+							</svg>
+						</span>
+					</>
+					}
 				</button>
 			)}
 			<div style={{ marginTop: 'auto', paddingTop: '2rem', fontSize: '0.9em', color: '#888' }}>
