@@ -34,10 +34,7 @@ export default async function SnapVote(ethersProvider: any, account: string, sub
     } catch (e: any) {
 
         console.log(e);
-        if (e.error_description) {
-            //alert(e.error + " : " + e.error_description);
-        }
-        console.log("Vote failed to send from SnapVote. " + e.error + " : " + e.error_description);
+        console.log("Vote failed to send from SnapVote. " + e.message);
 
         return false;
     }
