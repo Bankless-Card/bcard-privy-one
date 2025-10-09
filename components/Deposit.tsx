@@ -1,8 +1,9 @@
-
-
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import React, { useEffect, useState } from 'react';
 import { Contract, formatUnits, BrowserProvider } from 'ethers';
+
+import Withdraw from './Withdraw';
+
 
 export default function Deposit() {
 	const { ready, authenticated, login } = usePrivy();
@@ -123,41 +124,46 @@ export default function Deposit() {
 				vaultAddress: VAULT_ADDRESS
 			});
 
-			// Check allowance and approve on VAULT_ADDRESS contract
-			const vaultERC20 = new Contract(VAULT_ADDRESS, [
+			// Check USDC allowance and approve if needed
+			const usdcERC20 = new Contract(USDC_ADDRESS, [
 				"function allowance(address owner, address spender) view returns (uint256)",
 				"function approve(address spender, uint256 amount) returns (bool)"
 			], signer);
 			let allowance = BigInt(0);
-			if (typeof vaultERC20.allowance === 'function') {
-				allowance = await vaultERC20.allowance(address, VAULT_ADDRESS);
-				console.log('Vault ERC20 allowance for vault:', allowance.toString());
+			if (typeof usdcERC20.allowance === 'function') {
+				allowance = await usdcERC20.allowance(address, VAULT_ADDRESS);
+				console.log('USDC allowance for vault:', allowance.toString());
 			}
 			if (allowance < amount) {
-				// Approve vault to spend tokens
+				// Approve vault to spend USDC
 				setApprovalLoading(true);
-				console.log('Vault ERC20 allowance insufficient, approving...');
-				if (typeof vaultERC20.approve === 'function') {
-					const approveTx = await vaultERC20.approve(VAULT_ADDRESS, amount);
+				setDepositStatus('Approval transaction processing...');
+				console.log('USDC allowance insufficient, approving...');
+				if (typeof usdcERC20.approve === 'function') {
+					const approveTx = await usdcERC20.approve(VAULT_ADDRESS, amount);
 					console.log('Approve tx:', approveTx);
+					setDepositStatus('Waiting for approval confirmation...');
 					await approveTx.wait();
 					setApprovalSuccess(true);
+					setDepositStatus('Approval confirmed! Proceeding to deposit...');
 					console.log('Approve tx confirmed');
 				} else {
-					throw new Error('Vault ERC20 approve method not available');
+					throw new Error('USDC approve method not available');
 				}
 				setApprovalLoading(false);
 			} else {
 				setApprovalSuccess(false);
-				console.log('Vault ERC20 allowance sufficient, skipping approval');
+				setDepositStatus('USDC allowance sufficient, proceeding to deposit...');
+				console.log('USDC allowance sufficient, skipping approval');
 			}
 
 			// Call deposit(_assets, _receiver)
+			setDepositStatus('Sending deposit transaction...');
 			console.log('Calling vault.deposit with:', { amount: amount.toString(), receiver: address });
 			if (typeof vault.deposit === 'function') {
 				const depositTx = await vault.deposit(amount, address);
 				console.log('Deposit tx:', depositTx);
-				setDepositStatus('Transaction sent. Waiting for confirmation...');
+				setDepositStatus('Deposit transaction sent. Waiting for confirmation...');
 				await depositTx.wait();
 				console.log('Deposit tx confirmed');
 				setDepositSuccess(true);
@@ -212,13 +218,10 @@ export default function Deposit() {
 
 	return (
 		<div style={{ display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
-			<p>Inteact with USDC Vault</p>
+			<p><strong>Interact with USDC Vault</strong></p>
 			<div>Your USDC balance on Base: {usdcBalance === null ? 'Loading...' : usdcBalance}</div>
 			<div>Your ETH balance on Base: {ethBalance === null ? 'Loading...' : ethBalance}</div>
-			<div>Your Vault deposit balance: {vaultBalance === null ? 'Loading...' : vaultBalance}</div>
-			{approvalLoading && <div style={{ color: '#888' }}>Approving tokens for deposit...</div>}
-			{approvalSuccess && <div style={{ color: 'green' }}>Approval successful!</div>}
-			{depositStatus && <div style={{ color: depositSuccess ? 'green' : 'red' }}>{depositStatus}</div>}
+			
 			{usdcBalance !== null && usdcBalance > 0 && ethBalance !== null && ethBalance > 0 && (
 				<button onClick={handleDeposit} disabled={depositLoading || approvalLoading} style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}>
 					{depositLoading ? (depositStatus || 'Depositing...') : <>
@@ -233,6 +236,19 @@ export default function Deposit() {
 					}
 				</button>
 			)}
+
+			<div>Your Vault deposit balance: {vaultBalance === null ? 'Loading...' : vaultBalance}</div>
+			{approvalLoading && <div style={{ color: '#888' }}>Approving tokens for deposit...</div>}
+			{approvalSuccess && <div style={{ color: 'green' }}>Approval successful!</div>}
+			{depositStatus && <div style={{ color: depositSuccess ? 'green' : 'red' }}>{depositStatus}</div>}
+			{depositSuccess && !depositStatus && (
+				<div style={{ color: 'green' }}>Deposit successful!</div>
+			)}
+
+			{vaultBalance !== null && vaultBalance !== 0 && (
+				<Withdraw />
+			)}
+
 			<div style={{ marginTop: 'auto', paddingTop: '2rem', fontSize: '0.9em', color: '#888' }}>
 				Wallet Address: {walletAddress
 					? walletAddress
