@@ -219,8 +219,8 @@ export default function Deposit() {
 	return (
 		<div style={{ display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
 			<p><strong>Interact with USDC Vault</strong></p>
-			<div>Your USDC balance on Base: {usdcBalance === null ? 'Loading...' : usdcBalance}</div>
 			<div>Your ETH balance on Base: {ethBalance === null ? 'Loading...' : ethBalance}</div>
+			<div>Your USDC balance on Base: {usdcBalance === null ? 'Loading...' : usdcBalance}</div>
 			
 			{usdcBalance !== null && usdcBalance > 0 && ethBalance !== null && ethBalance > 0 && (
 				<button onClick={handleDeposit} disabled={depositLoading || approvalLoading} style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}>
@@ -237,7 +237,7 @@ export default function Deposit() {
 				</button>
 			)}
 
-			<div>Your Vault deposit balance: {vaultBalance === null ? 'Loading...' : vaultBalance}</div>
+			{/* <div>Your Vault deposit balance: {vaultBalance === null ? 'Loading...' : vaultBalance}</div> */}
 			{approvalLoading && <div style={{ color: '#888' }}>Approving tokens for deposit...</div>}
 			{approvalSuccess && <div style={{ color: 'green' }}>Approval successful!</div>}
 			{depositStatus && <div style={{ color: depositSuccess ? 'green' : 'red' }}>{depositStatus}</div>}

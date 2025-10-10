@@ -114,7 +114,6 @@ export default function Withdraw() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '200px' }}>
             <p><strong>Withdraw from USDC Vault</strong></p>
-            {/* <div>Your Vault balance: {vaultBalance}</div> */}
             {withdrawStatus && <div style={{ color: withdrawSuccess ? 'green' : 'red' }}>{withdrawStatus}</div>}
             {withdrawSuccess && !withdrawStatus && (
                 <div style={{ color: 'green' }}>Withdraw successful!</div>
@@ -130,6 +129,8 @@ export default function Withdraw() {
                     </span>
                 </>}
             </button>
+            <div>Your Vault balance: {vaultBalance}</div>
+
             {/* <div style={{ marginTop: 'auto', paddingTop: '2rem', fontSize: '0.9em', color: '#888' }}>
                 Wallet Address: {walletAddress}
             </div> */}
