@@ -4,18 +4,19 @@ import Image from 'next/image';
 import styles from './SnapshotSendVote.module.css';
 import Button from './Button';
 import Modal from './Modal';
-import SnapVote from './SnapVote';
 import LoadingSpinner from './LoadingSpinner';
 import { formatDistanceToNow } from 'date-fns';
 
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import snapshot from '@snapshot-labs/snapshot.js';
 import { Web3Provider } from '@ethersproject/providers';
+import { BrowserProvider } from 'ethers';
 
 import { createPublicClient, http } from 'viem';
 import { optimism } from 'viem/chains';
 import { marked } from 'marked';
 import { PrivyUser, Wallet } from '@privy-io/react-auth';
+
 
 const BANK_OP_CONTRACT = '0x29FAF5905bfF9Cfcc7CF56a5ed91E0f091F8664B';
 const OP_BANK_ABI = [
@@ -116,9 +117,6 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
     const { user } = usePrivy();
     const privyUser = user;
 
-    const hub = 'https://hub.snapshot.org';
-    const client = new snapshot.Client712(hub);
-
     const [bankBalance, setBankBalance] = useState<number | null>(null);
     const [embedAdr, setEmbedAdr] = useState<string | null>(null);
     const [personalAdr, setPersonalAdr] = useState<string | null>(null);
@@ -134,7 +132,6 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
 
     async function startVote(val: number) {
         setVoteProcess(VOTE_PROCESS.INIT);
-        console.log(val);
 
         if (propDump && propDump.type == "weighted") {
             const weightedValues = getWeightedVotingValues();
@@ -159,7 +156,7 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
     async function sendVote(
         val: number | null,
         choiceType: 'basic' | 'weighted' = 'basic',
-        app: string = 'bcard-app',
+        app: string = 'blackflag-app',
         voteWith: string = voteWallet,
         reason?: string,
     ) {
@@ -185,7 +182,8 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
 
                 const privyProvider = await embeddedWallet.getEthereumProvider();
                 const ethersProvider = new Web3Provider(privyProvider);
-                const account = embedAdr;
+                const signer = await ethersProvider.getSigner();
+                const account = await signer.getAddress();
 
                 const submitData = {
                     space: space,
@@ -209,11 +207,17 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
             return;
         } else {
             if (embedAdr) {
+
                 const embeddedWallet = wallets.find((wallet) => wallet.walletClientType === 'privy');
                 if (!embeddedWallet) return;
 
                 const privyProvider = await embeddedWallet.getEthereumProvider();
-                const ethersProvider = new Web3Provider(privyProvider);
+                const ethersProvider = new BrowserProvider(privyProvider);
+                const signer = await ethersProvider.getSigner();
+                //monkey patching this since snapshot doesn't support ethers v6
+                signer._signTypedData = async (domain, types, value) => {
+                  return signer.signTypedData(domain, types, value);
+                };
                 const account = embedAdr;
 
                 const submitData = {
@@ -225,7 +229,10 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
                     app: app
                 };
 
-                const resultOfSnapVote = await SnapVote(ethersProvider, account, submitData);
+
+
+
+                const resultOfSnapVote = await SnapVote(signer, account, submitData);
                 if (resultOfSnapVote) {
                     setVoteProcess(VOTE_PROCESS.THANKS);
                 } else {
@@ -236,6 +243,39 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
                 setMyVote(updatedVotes.find((vote) => vote.voter === embedAdr) || null);
             }
         }
+    }
+
+    async function SnapVote(ethersProvider: any, account: string, submitData: SubmitData): Promise<boolean> {
+
+        //console.log("SNAP VOTE: ", submitData, account);
+
+        const hub = 'https://hub.snapshot.org'; // or https://testnet.hub.snapshot.org for testnet
+        const client = new snapshot.Client712(hub);
+
+        try {
+            // build and commit the vote
+            const receipt = await client.vote(ethersProvider, account, submitData);
+
+            if (receipt) {
+
+                let notice = "Proposal Vote #" + submitData.choice + " submitted successfully.";
+                if (submitData.reason) {
+                    notice = notice + " Reason: " + submitData.reason;
+                }
+
+                return true;
+
+            }
+
+        } catch (e: any) {
+
+            console.log(e);
+            console.log("Vote failed to send from SnapVote. " + e.message);
+
+            return false;
+        }
+
+        return false;
     }
 
     async function getVotes(): Promise<Vote[]> {
