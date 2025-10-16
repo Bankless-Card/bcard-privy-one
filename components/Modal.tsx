@@ -45,12 +45,15 @@ export default function Modal({ children, className = "", title = "", backButton
 
     return (
         <div className={classes} >
-            <h1 className={styles.ModalTitle}>{title}</h1>
-            <BackButton />
-            <div className={styles.ModalContent} >
-                <ModalChildren />
+            <div className={styles.ModalContainer} >
+                <h1 className={styles.ModalTitle}>{title}</h1>
+                <BackButton />
+                <div className={styles.ModalContent} >
+                    <ModalChildren />
+                </div>
             </div>
         </div>
+
     ); //end of return statement
 
 } //end export

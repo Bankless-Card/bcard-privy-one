@@ -731,7 +731,7 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
                     <a className={styles.snapshotLink} href={url} target="_blank">View on Snapshot</a>
                 </div>
                 {voteProcess === VOTE_PROCESS.INIT &&
-                    <Modal backButtonClickHandler={() => resetVote()} className={styles.voteModal}>
+                    <Modal backButtonClickHandler={() => resetVote()} className={styles.voteModal} title="Vote Summary">
                         <div className={styles.voteModalContainer}>
                             <div className={styles.SendVote}>
                                 {propDump && propDump.type === "weighted" &&

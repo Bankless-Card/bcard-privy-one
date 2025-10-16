@@ -161,7 +161,7 @@ export default function Vote({ onlyActiveProposals=false }) {
 
 	return (
 		<div className={styles.VotePageContainer}>
-			<h3>Votes</h3>
+			<h3>Active Votes</h3>
 
 		
 			{/* for each proposal in the proposals array, create a SnapshotSendVote component */}
