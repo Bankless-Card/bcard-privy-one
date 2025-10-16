@@ -84,7 +84,6 @@ interface SnapshotSendVoteProps {
     proposal?: string;
     snaptime?: string | number;
     endtime?: string | number;
-    votes?: Vote[];
     propDump: Proposal;
     voteWallet?: string;
 }
@@ -108,7 +107,6 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
     proposal = "0x4ebec339d3e46ba35edf991213358b457b5127bcd78c069259a837b6103091e3",
     snaptime = "unknown",
     endtime = "unknown",
-    votes,
     propDump,
     voteWallet = "privy",
 }) => {
@@ -284,10 +282,9 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
 
     async function getVotes(): Promise<Vote[]> {
         let newVotes: Vote[] = [];
-        const SNAPSHOT_QUERY_ROUTE = "https://stagetx.banklesscard.xyz/api/snapshot";
         const htmlQuery = `query%20Votes%20%7B%0A%20%20votes(first%3A%201000%2C%20where%3A%20%7Bproposal%3A%20%22${proposal}%22%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20vp%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Votes`;
 
-        await fetch(SNAPSHOT_QUERY_ROUTE, {
+        await fetch(process.env.NEXT_PUBLIC_SNAPSHOT_QUERY_ROUTE, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ q: htmlQuery }),
@@ -303,7 +300,7 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
     async function getVP(address: string, space: string, proposal: string) {
         const SnapQLquery = `https://hub.snapshot.org/graphql?query=query%20%7B%0A%20%20vp%20(%0A%20%20%20%20voter%3A%20%22${address}%22%0A%20%20%20%20space%3A%20%22${space}%22%0A%20%20%20%20proposal%3A%20%22${proposal}%22%0A%20%20)%20%7B%0A%20%20%20%20vp%0A%20%20%20%20vp_by_strategy%0A%20%20%20%20vp_state%0A%20%20%7D%20%0A%7D%0A`;
         let qReturn: any = {};
-        await fetch("https://stagetx.banklesscard.xyz/api/snapshot", {
+        await fetch(process.env.NEXT_PUBLIC_SNAPSHOT_QUERY_ROUTE, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ address, space, proposal, q: SnapQLquery }),
@@ -330,7 +327,7 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
 
         if (Object.keys(vp).length === 0 && embedVP === 0) {
             const htmlQuery = `query%20%7B%0A%20%20vp%20(%0A%20%20%20%20voter%3A%20%22${embedAdr}%22%0A%20%20%20%20space%3A%20%22${space}%22%0A%20%20%20%20proposal%3A%20%22${proposal}%22%0A%20%20)%20%7B%0A%20%20%20%20vp%0A%20%20%20%20vp_by_strategy%0A%20%20%20%20vp_state%0A%20%20%7D%20%0A%7D%0A`;
-            await fetch("https://stagetx.banklesscard.xyz/api/snapshot", {
+            await fetch(process.env.NEXT_PUBLIC_SNAPSHOT_QUERY_ROUTE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ address: embedAdr, space, proposal, q: htmlQuery }),
@@ -516,10 +513,12 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
     useEffect(() => {
         async function init() {
             let myVoteInit: Vote | null = null;
+            let userAddr = await getSetEmbeddedAddress();
+
 
             if (allVotes) {
                 allVotes.every(v => {
-                    if (v.voter === embedAdr || v.voter === personalAdr) {
+                    if (v.voter === userAddr || v.voter === personalAdr) {
                         myVoteInit = v;
                         setMyVote(v);
                         setVoteProcess(VOTE_PROCESS.COMPLETE);

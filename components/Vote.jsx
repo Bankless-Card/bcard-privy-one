@@ -43,8 +43,6 @@ export default function Vote({ onlyActiveProposals=false }) {
 				propState = "active";
 			}
 
-			const SNAPSHOT_QUERY_ROUTE = "https://stagetx.banklesscard.xyz/api/snapshot";
-
 			const query = `
 			  query Proposals {
 			    proposals(
@@ -78,7 +76,7 @@ export default function Vote({ onlyActiveProposals=false }) {
 			const htmlQuery = encodeURIComponent(query);
 			const buildQuery = `https://hub.snapshot.org/graphql?query=${htmlQuery}&operationName=Proposals`;
 
-			const response = await fetch(SNAPSHOT_QUERY_ROUTE, {
+			const response = await fetch(process.env.NEXT_PUBLIC_SNAPSHOT_QUERY_ROUTE, {
 			  method: 'POST',
 			  headers: { 'Content-Type': 'application/json' },
 			  body: JSON.stringify({
@@ -98,23 +96,40 @@ export default function Vote({ onlyActiveProposals=false }) {
 
 				let numVotes = 10;		// max number of votes to get
 
-				let votesQuery = "https://hub.snapshot.org/graphql?query=query%20Votes%20%7B%0A%20%20votes(first%3A%20"+numVotes+"%2C%20where%3A%20%7Bproposal%3A%20%22" +
-				proposal.id+"%22%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20vp%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Votes";
-			
-				let intVoteQuery = "query%20Votes%20%7B%0A%20%20votes(first%3A%20"+numVotes+"%2C%20where%3A%20%7Bproposal%3A%20%22" +
-				proposal.id+"%22%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20vp%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Votes";
+				const voteQuery = `
+				  query Votes {
+				    votes(
+				      first: ${numVotes},
+				      where: {
+				        proposal: "${proposal.id}"
+				      }
+				    ) {
+				      id
+				      voter
+				      created
+				      choice
+				      vp
+				      space {
+				        id
+				      }
+				    }
+				  }
+				`;
 
-				const voteResponse = await fetch(SNAPSHOT_QUERY_ROUTE, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"authorization": "internal-auth"
-					},
-					body: JSON.stringify({
-						query: "votes",
-						q: intVoteQuery
-					})
+				const encodedVoteQuery = encodeURIComponent(voteQuery);
+
+				const voteResponse = await fetch(process.env.NEXT_PUBLIC_SNAPSHOT_QUERY_ROUTE, {
+				  method: "POST",
+				  headers: {
+				    "Content-Type": "application/json",
+				    "authorization": "internal-auth"
+				  },
+				  body: JSON.stringify({
+				    query: "votes",
+				    q: encodedVoteQuery
+				  })
 				});
+
 
 				const voteData = await voteResponse.json();
 				// console.log(voteData.data);
@@ -174,7 +189,6 @@ export default function Vote({ onlyActiveProposals=false }) {
 									proposal={proposal.id}
 									snaptime={proposal.start}
 									endtime={proposal.end}
-									votes={proposal.votes}
 									voteWallet='privy'		// set to privy for embedded, all others will give personal
 									propDump={proposal}
 									key={index}
