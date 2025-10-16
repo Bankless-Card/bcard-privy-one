@@ -25,7 +25,7 @@ export default function LandingPage({ markdownContent }: { markdownContent: stri
 
           
           <div className="sidebar">
-            {<Vote />}
+            {<Vote onlyActiveProposals={true} />}
           </div>
         
         </div>
