@@ -17,6 +17,8 @@ function MyApp({ Component, pageProps }: AppProps) {
 
         <title>We are the Black Flag</title>
         <meta name="description" content="Join the 🏴 - an IRL social network." />
+
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
