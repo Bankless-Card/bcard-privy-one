@@ -23,11 +23,11 @@ export default function LandingPage({ markdownContent }: { markdownContent: stri
             <BlackFlagSite markdownContent={markdownContent} />
           </main>
 
-          {/*
+          
           <div className="sidebar">
             {<Vote />}
           </div>
-          */}
+        
         </div>
         
         <Footer />
