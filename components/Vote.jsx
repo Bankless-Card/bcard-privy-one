@@ -73,15 +73,12 @@ export default function Vote({ onlyActiveProposals=false }) {
 			  }
 			`;
 
-			const htmlQuery = encodeURIComponent(query);
-			const buildQuery = `https://hub.snapshot.org/graphql?query=${htmlQuery}&operationName=Proposals`;
-
 			const response = await fetch(process.env.NEXT_PUBLIC_SNAPSHOT_QUERY_ROUTE, {
 			  method: 'POST',
 			  headers: { 'Content-Type': 'application/json' },
 			  body: JSON.stringify({
 			    query: 'spaces',
-			    q: htmlQuery
+			    q: query
 			  })
 			});
 
@@ -94,12 +91,10 @@ export default function Vote({ onlyActiveProposals=false }) {
 			const votePromises = proposals.map(async (proposal) => {
 				// console.log(proposal.id);
 
-				let numVotes = 10;		// max number of votes to get
-
 				const voteQuery = `
 				  query Votes {
 				    votes(
-				      first: ${numVotes},
+				      first: 1000,
 				      where: {
 				        proposal: "${proposal.id}"
 				      }
@@ -126,7 +121,7 @@ export default function Vote({ onlyActiveProposals=false }) {
 				  },
 				  body: JSON.stringify({
 				    query: "votes",
-				    q: encodedVoteQuery
+				    q: voteQuery
 				  })
 				});
 

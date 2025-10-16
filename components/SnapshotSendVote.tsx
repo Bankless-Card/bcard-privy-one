@@ -282,38 +282,67 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
 
     async function getVotes(): Promise<Vote[]> {
         let newVotes: Vote[] = [];
-        const htmlQuery = `query%20Votes%20%7B%0A%20%20votes(first%3A%201000%2C%20where%3A%20%7Bproposal%3A%20%22${proposal}%22%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20vp%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Votes`;
+        const query = `
+          query Votes {
+            votes(
+              first: 1000,
+              where: { proposal: "${proposal}" }
+            ) {
+              id
+              voter
+              created
+              choice
+              vp
+              space {
+                id
+              }
+            }
+          }
+        `;
 
         await fetch(process.env.NEXT_PUBLIC_SNAPSHOT_QUERY_ROUTE, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ q: htmlQuery }),
+            body: JSON.stringify({ q: query }),
         })
-            .then(response => response.json())
-            .then(data => {
-                newVotes = data.data.data.votes;
-                setAllVotes(newVotes);
-            });
+        .then(response => response.json())
+        .then(data => {
+            newVotes = data.data.data.votes;
+            setAllVotes(newVotes);
+        });
         return newVotes;
     }
 
     async function getVP(address: string, space: string, proposal: string) {
-        const SnapQLquery = `https://hub.snapshot.org/graphql?query=query%20%7B%0A%20%20vp%20(%0A%20%20%20%20voter%3A%20%22${address}%22%0A%20%20%20%20space%3A%20%22${space}%22%0A%20%20%20%20proposal%3A%20%22${proposal}%22%0A%20%20)%20%7B%0A%20%20%20%20vp%0A%20%20%20%20vp_by_strategy%0A%20%20%20%20vp_state%0A%20%20%7D%20%0A%7D%0A`;
+        const query = `
+          query {
+            vp(
+              voter: "${address}"
+              space: "${space}"
+              proposal: "${proposal}"
+            ) {
+              vp
+              vp_by_strategy
+              vp_state
+            }
+          }
+        `;
+
         let qReturn: any = {};
         await fetch(process.env.NEXT_PUBLIC_SNAPSHOT_QUERY_ROUTE, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ address, space, proposal, q: SnapQLquery }),
+            body: JSON.stringify({ address, space, proposal, q: query }),
         })
-            .then(response => response.json())
-            .then(data => {
-                qReturn = data;
-                if (qReturn.data) {
-                    qReturn = qReturn.data;
-                }
-                setVp({ ...vp, [address]: qReturn });
-                return qReturn;
-            });
+        .then(response => response.json())
+        .then(data => {
+            qReturn = data;
+            if (qReturn.data) {
+                qReturn = qReturn.data;
+            }
+            setVp({ ...vp, [address]: qReturn });
+            return qReturn;
+        });
     }
 
     async function getSetBalance(token: string) {
@@ -326,11 +355,24 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
         consolidatedBalance.combined = embedVP;
 
         if (Object.keys(vp).length === 0 && embedVP === 0) {
-            const htmlQuery = `query%20%7B%0A%20%20vp%20(%0A%20%20%20%20voter%3A%20%22${embedAdr}%22%0A%20%20%20%20space%3A%20%22${space}%22%0A%20%20%20%20proposal%3A%20%22${proposal}%22%0A%20%20)%20%7B%0A%20%20%20%20vp%0A%20%20%20%20vp_by_strategy%0A%20%20%20%20vp_state%0A%20%20%7D%20%0A%7D%0A`;
+            const query = `
+              query {
+                vp(
+                  voter: "${embedAdr}"
+                  space: "${space}"
+                  proposal: "${proposal}"
+                ) {
+                  vp
+                  vp_by_strategy
+                  vp_state
+                }
+              }
+            `;
+
             await fetch(process.env.NEXT_PUBLIC_SNAPSHOT_QUERY_ROUTE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ address: embedAdr, space, proposal, q: htmlQuery }),
+                body: JSON.stringify({ address: embedAdr, space, proposal, q: query }),
             })
                 .then(response => response.json())
                 .then(data => {
