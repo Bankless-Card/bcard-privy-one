@@ -45,25 +45,6 @@ export default function Vote({ onlyActiveProposals=false }) {
 
 			const SNAPSHOT_QUERY_ROUTE = "https://stagetx.banklesscard.xyz/api/snapshot";
 
-			//let htmlQuery = "%0Aquery%20Proposals%20%7B%0A%20%20proposals(%0A%20%20%20%20first%3A%20"+propNum+"%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20space_in%3A%20%5B%22"+spaceList+"%22%5D%0A%20%20%20%20%7D%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20title%0A%20%20%20%20body%0A%20%20%20%20choices%0A%20%20%20%20start%0A%20%20%20%20end%0A%20%20%20%20snapshot%0A%20%20%20%20state%0A%20%20%20%20author%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Proposals";		// html encoded for address posting
-			/*let htmlQuery = "%0Aquery%20Proposals%20%7B%0A%20%20proposals(%0A%20%20%20%20first%3A%20"+propNum+"%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20space_in%3A%20%5B%22"+spaceList+"%22%5D%0A%20%20%20%20%7D%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20title%0A%20%20%20%20body%0A%20%20%20%20type%0A%20%20%20%20choices%0A%20%20%20%20start%0A%20%20%20%20end%0A%20%20%20%20snapshot%0A%20%20%20%20state%0A%20%20%20%20author%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Proposals";		// html encoded for address posting
-			let buildQuery = "https://hub.snapshot.org/graphql?query=%0Aquery%20Proposals%20%7B%0A%20%20proposals(%0A%20%20%20%20first%3A%20"+propNum+"%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20space_in%3A%20%5B%22"+spaceList+"%22%5D%0A%20%20%20%20%7D%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20title%0A%20%20%20%20body%0A%20%20%20%20choices%0A%20%20%20%20start%0A%20%20%20%20end%0A%20%20%20%20snapshot%0A%20%20%20%20state%0A%20%20%20%20author%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Proposals";
-
-			// await fetch(QUERY_URL)
-			// await fetch(buildQuery)
-			const response = await fetch(SNAPSHOT_QUERY_ROUTE, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					query: "spaces",
-					q: htmlQuery
-				})
-			});*/
-
-
-
 			const query = `
 			  query Proposals {
 			    proposals(
@@ -105,10 +86,6 @@ export default function Vote({ onlyActiveProposals=false }) {
 			    q: htmlQuery
 			  })
 			});
-
-
-
-
 
 			const data = await response.json();
 			// console.log(data.data);
