@@ -1,6 +1,6 @@
 import React from 'react';
 import Head from 'next/head';
-//import LandingNavbar from './landing-navbar';
+import LandingNavbar from './LandingNavbar';
 import BlackFlagSite from './black-flag-site';
 import Vote from './Vote';
 import Footer from './footer';
@@ -16,10 +16,10 @@ export default function LandingPage({ markdownContent }: { markdownContent: stri
 
       <div className="bf-theme">
         <Header />
-        {/* <LandingNavbar /> */}
         
         <div className="content-container">
           <main className="main-content">
+            <LandingNavbar />
             <BlackFlagSite markdownContent={markdownContent} />
           </main>
 

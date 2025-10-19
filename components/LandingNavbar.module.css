@@ -1,0 +1,31 @@
+.nav {
+  display: flex;
+  justify-content: left;
+  margin: 1px 1px;
+  border-top: solid 1px #000;
+  border-bottom: solid 1px #000;
+}
+
+.navItem {
+  margin: 0 1rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+}
+
+.nav div :first-child {
+  margin-left: 0;
+}
+
+.navMobile {
+	display: block;
+}
+
+
+/* Desktop/tablet styles - centered modal */
+@media (min-width: 768px) {
+	.navMobile {
+		display: none;
+	}
+}

@@ -238,25 +238,6 @@ a:hover {
   margin-bottom: 1.5rem;
 }
 
-/* Navigation */
-.bf-nav {
-  display: flex;
-  justify-content: center;
-  margin: 2rem 0;
-}
-
-.bf-nav-item {
-  margin: 0 1rem;
-  text-transform: uppercase;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-decoration: none;
-}
-
-.main-nav div :first-child {
-  margin-left: 0;
-}
-
 
 /* Button Overrides */
 .bf-theme .SecondaryButton {

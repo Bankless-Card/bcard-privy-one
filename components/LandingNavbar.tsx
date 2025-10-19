@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getRoute } from '../utils/routes';
 import { useState } from 'react';
+import styles from './LandingNavbar.module.css';
 
 export default function LandingNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -12,39 +13,27 @@ export default function LandingNavbar() {
 
 
   return (
-    <nav className="py-2 main-nav">
-        <div className="flex justify-between items-center">
-          <div className="md:flex md:items-center">
+    <nav className={styles.nav}>
+        <div>
+          <div>
             <Link
-              href={getRoute("/login")}
-              className="bf-nav-item"
+              href={getRoute("/")}
+              className={styles.navItem}
             >
-              Login
+              About
             </Link>
             <Link
-              href="#mission"
-              className="bf-nav-item"
+              href="/content/test"
+              className={styles.navItem}
             >
-              Mission
-            </Link>
-            <Link
-              href="#participate"
-              className="bf-nav-item"
-            >
-              Participate
-            </Link>
-            <Link
-              href="#sponsors"
-              className="bf-nav-item"
-            >
-              Sponsors
+              Vote
             </Link>
           </div>
           
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className={styles.navMobile}>
             <button 
-              className="bf-button py-1 px-2 text-sm"
+              className="bf-button"
               onClick={toggleMenu}
               aria-expanded={mobileMenuOpen}
               aria-label="Toggle navigation menu"
@@ -56,32 +45,32 @@ export default function LandingNavbar() {
         
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-4 py-2 border-t border-gray-700">
-            <div className="flex flex-col space-y-3 items-center">
+          <div className={styles.navMobile} >
+            <div>
               <Link
                 href={getRoute("/login")}
-                className="bf-nav-item py-2"
+                className={styles.navItem}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Login
               </Link>
               <Link
                 href="#mission"
-                className="bf-nav-item py-2"
+                className={styles.navItem}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Mission
               </Link>
               <Link
                 href="#participate"
-                className="bf-nav-item py-2"
+                className={styles.navItem}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Participate
               </Link>
               <Link
                 href="#sponsors"
-                className="bf-nav-item py-2"
+                className={styles.navItem}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Sponsors
