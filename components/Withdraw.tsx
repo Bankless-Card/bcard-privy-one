@@ -104,14 +104,68 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                         setTimeout(() => reject(new Error('WITHDRAW_CALL_TIMEOUT')), 30000); // 30 second timeout
                     });
                     
+                    // Declare interval outside try block so it's accessible in catch
+                    let balanceCheckInterval: NodeJS.Timeout | null = null;
                     let withdrawTx;
+                    
                     try {
+                        // Start periodic balance checks every 5 seconds
+                        const startPeriodicBalanceCheck = () => {
+                            balanceCheckInterval = setInterval(async () => {
+                                if (typeof vault.balanceOf === 'function') {
+                                    try {
+                                        const currentVaultBalance = await vault.balanceOf(address);
+                                        const currentVaultBalanceNum = Number(formatUnits(currentVaultBalance, 6));
+                                        console.log('🔍 Periodic withdraw balance check:', currentVaultBalanceNum, 'Previous:', vaultBalance);
+                                        
+                                        if (currentVaultBalanceNum < (vaultBalance || 0)) {
+                                            console.log('✅ Withdraw detected via periodic check!');
+                                            if (balanceCheckInterval) clearInterval(balanceCheckInterval);
+                                            clearInterval(withdrawCountdownInterval);
+                                            setCountdown(0);
+                                            
+                                            // Update balances
+                                            setVaultBalance(currentVaultBalanceNum);
+                                            const usdc = new Contract(USDC_ADDRESS, USDC_ABI, provider);
+                                            if (typeof usdc.balanceOf === 'function') {
+                                                const balance = await usdc.balanceOf(address);
+                                                const newUsdcBalance = Number(formatUnits(balance, 6));
+                                                console.log('Updated USDC balance:', newUsdcBalance);
+                                                setUsdcBalance(newUsdcBalance);
+                                            }
+                                            
+                                            setWithdrawSuccess(true);
+                                            setWithdrawStatus('Withdraw successful!');
+                                            setTimeout(() => {
+                                                setWithdrawStatus(null);
+                                            }, 5000);
+                                            
+                                            // Set withdrawTx to null to skip the normal flow
+                                            withdrawTx = null;
+                                            setWithdrawLoading(false);
+                                        }
+                                    } catch (checkErr) {
+                                        console.log('🔍 Withdraw balance check error (will retry):', checkErr);
+                                    }
+                                }
+                            }, 5000); // Check every 5 seconds
+                        };
+                        
+                        // Start periodic checks
+                        startPeriodicBalanceCheck();
+                        
                         withdrawTx = await Promise.race([withdrawPromise, withdrawTimeoutPromise]);
+                        
+                        // If we got here, the promise resolved, so stop periodic checks
+                        if (balanceCheckInterval) clearInterval(balanceCheckInterval);
+                        
                         clearInterval(withdrawCountdownInterval);
                         setCountdown(0);
                         console.log('Withdraw tx returned:', withdrawTx);
                         console.log('Withdraw tx hash:', withdrawTx?.hash);
                     } catch (timeoutErr: any) {
+                        // Clean up intervals
+                        if (balanceCheckInterval) clearInterval(balanceCheckInterval);
                         clearInterval(withdrawCountdownInterval);
                         setCountdown(0);
                         
@@ -183,7 +237,22 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                     }
                     
                     if (withdrawTx) {
-                        console.log('Withdraw tx hash:', withdrawTx?.hash);
+                        // Log detailed withdrawal transaction metadata
+                        console.log('✅ Withdraw Transaction Sent:', {
+                            hash: withdrawTx.hash,
+                            from: withdrawTx.from,
+                            to: withdrawTx.to,
+                            value: withdrawTx.value?.toString(),
+                            gasLimit: withdrawTx.gasLimit?.toString(),
+                            gasPrice: withdrawTx.gasPrice?.toString(),
+                            maxFeePerGas: withdrawTx.maxFeePerGas?.toString(),
+                            maxPriorityFeePerGas: withdrawTx.maxPriorityFeePerGas?.toString(),
+                            nonce: withdrawTx.nonce,
+                            chainId: withdrawTx.chainId,
+                            type: withdrawTx.type,
+                            data: withdrawTx.data
+                        });
+                        
                         setWithdrawStatus('Transaction sent. Waiting for confirmation...');
                         // Show BaseScan link as plain string if available
                         if (withdrawTx.hash) {
@@ -191,9 +260,25 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                                 `Withdraw transaction sent. Waiting for confirmation...\nView on BaseScan: https://basescan.org/tx/${withdrawTx.hash}`
                             );
                         }
-                        console.log('About to wait for withdraw tx confirmation...');
+                        console.log('⏳ Waiting for withdraw tx confirmation...');
                         const receipt = await withdrawTx.wait();
-                        console.log('Withdraw tx confirmed, receipt:', receipt);
+                        
+                        // Log detailed withdrawal receipt metadata
+                        console.log('✅ Withdraw Transaction Confirmed:', {
+                            transactionHash: receipt.hash,
+                            blockNumber: receipt.blockNumber,
+                            blockHash: receipt.blockHash,
+                            from: receipt.from,
+                            to: receipt.to,
+                            gasUsed: receipt.gasUsed?.toString(),
+                            cumulativeGasUsed: receipt.cumulativeGasUsed?.toString(),
+                            effectiveGasPrice: receipt.gasPrice?.toString(),
+                            status: receipt.status,
+                            logsBloom: receipt.logsBloom,
+                            events: receipt.logs?.length || 0,
+                            confirmations: await receipt.confirmations()
+                        });
+                        
                         setWithdrawSuccess(true);
                         setWithdrawStatus('Withdraw successful!');
                         console.log('Withdraw status set to successful');

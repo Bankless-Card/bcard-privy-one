@@ -202,7 +202,21 @@ export default function Deposit() {
 						}
 						
 						if (approveTx) {
-							console.log('Approve tx hash:', approveTx?.hash);
+							// Log detailed approval transaction metadata
+							console.log('✅ Approval Transaction Sent:', {
+								hash: approveTx.hash,
+								from: approveTx.from,
+								to: approveTx.to,
+								value: approveTx.value?.toString(),
+								gasLimit: approveTx.gasLimit?.toString(),
+								gasPrice: approveTx.gasPrice?.toString(),
+								maxFeePerGas: approveTx.maxFeePerGas?.toString(),
+								maxPriorityFeePerGas: approveTx.maxPriorityFeePerGas?.toString(),
+								nonce: approveTx.nonce,
+								chainId: approveTx.chainId,
+								type: approveTx.type,
+								data: approveTx.data
+							});
 							
 							// Show BaseScan link as plain string if available
 							if (approveTx.hash) {
@@ -222,9 +236,25 @@ export default function Deposit() {
 							}, 120000); // 2 minutes
 							
 							try {
-								console.log('About to wait for approval tx confirmation...');
+								console.log('⏳ Waiting for approval tx confirmation...');
 								const receipt = await approveTx.wait();
-								console.log('Approval tx confirmed, receipt:', receipt);
+								
+								// Log detailed approval receipt metadata
+								console.log('✅ Approval Transaction Confirmed:', {
+									transactionHash: receipt.hash,
+									blockNumber: receipt.blockNumber,
+									blockHash: receipt.blockHash,
+									from: receipt.from,
+									to: receipt.to,
+									gasUsed: receipt.gasUsed?.toString(),
+									cumulativeGasUsed: receipt.cumulativeGasUsed?.toString(),
+									effectiveGasPrice: receipt.gasPrice?.toString(),
+									status: receipt.status,
+									logsBloom: receipt.logsBloom,
+									events: receipt.logs?.length || 0,
+									confirmations: await receipt.confirmations()
+								});
+								
 								clearTimeout(approvalTimeout);
 								setApprovalSuccess(true);
 								setDepositStatus('Approval confirmed! Proceeding to deposit...');
@@ -259,10 +289,12 @@ export default function Deposit() {
 
 			// Call deposit(_assets, _receiver)
 			setDepositStatus('Sending deposit transaction...');
-			console.log('Calling vault.deposit with:', { amount: amount.toString(), receiver: address });
+			console.log('🔵 Calling vault.deposit with:', { amount: amount.toString(), receiver: address });
 			if (typeof vault.deposit === 'function') {
 				try {
-					console.log('About to call vault.deposit...');
+					console.log('🔵 About to call vault.deposit...');
+					console.log('🔵 Vault contract address:', VAULT_ADDRESS);
+					console.log('🔵 Deposit method exists:', typeof vault.deposit);
 					
 					// Start countdown for deposit
 					setCountdown(30);
@@ -272,25 +304,92 @@ export default function Deposit() {
 					}, 1000);
 					
 					// Wrap deposit call in a timeout Promise race
+					console.log('🔵 Creating deposit promise...');
 					const depositPromise = vault.deposit(amount, address);
+					console.log('🔵 Deposit promise created:', depositPromise);
+					console.log('🔵 Is it a Promise?', depositPromise instanceof Promise);
+
 					const depositTimeoutPromise = new Promise((_, reject) => {
 						setTimeout(() => reject(new Error('DEPOSIT_CALL_TIMEOUT')), 30000); // 30 second timeout
 					});
 					
+					// Declare interval outside try block so it's accessible in catch
+					let balanceCheckInterval: NodeJS.Timeout | null = null;
 					let depositTx;
+					
 					try {
+						console.log('🔵 Starting Promise.race for deposit...');
+						
+						// Start periodic balance checks every 5 seconds
+						const startPeriodicBalanceCheck = () => {
+							balanceCheckInterval = setInterval(async () => {
+								if (typeof vault.balanceOf === 'function') {
+									try {
+										const currentVaultBalance = await vault.balanceOf(address);
+										const currentVaultBalanceNum = Number(formatUnits(currentVaultBalance, 6));
+										console.log('🔍 Periodic balance check:', currentVaultBalanceNum, 'Previous:', vaultBalance);
+										
+										if (currentVaultBalanceNum > (vaultBalance || 0)) {
+											console.log('✅ Deposit detected via periodic check!');
+											if (balanceCheckInterval) clearInterval(balanceCheckInterval);
+											clearInterval(depositCountdownInterval);
+											setCountdown(0);
+											
+											// Update balances
+											setVaultBalance(currentVaultBalanceNum);
+											const usdc = new Contract(USDC_ADDRESS, USDC_ABI, provider);
+											if (typeof usdc.balanceOf === 'function') {
+												const balance = await usdc.balanceOf(address);
+												const newUsdcBalance = Number(formatUnits(balance, 6));
+												console.log('Updated USDC balance:', newUsdcBalance);
+												setUsdcBalance(newUsdcBalance);
+											}
+											
+											setDepositSuccess(true);
+											setDepositStatus('Deposit successful!');
+											setTimeout(() => {
+												setDepositStatus(null);
+											}, 5000);
+											
+											// Set depositTx to null to skip the normal flow
+											depositTx = null;
+											setDepositLoading(false);
+										}
+									} catch (checkErr) {
+										console.log('🔍 Balance check error (will retry):', checkErr);
+									}
+								}
+							}, 5000); // Check every 5 seconds
+						};
+						
+						// Start periodic checks
+						startPeriodicBalanceCheck();
+						
 						depositTx = await Promise.race([depositPromise, depositTimeoutPromise]);
+						
+						// If we got here, the promise resolved, so stop periodic checks
+						if (balanceCheckInterval) clearInterval(balanceCheckInterval);
+						
+						console.log('🔵 Promise.race resolved!');
 						clearInterval(depositCountdownInterval);
 						setCountdown(0);
-						console.log('Deposit tx returned:', depositTx);
-						console.log('Deposit tx hash:', depositTx?.hash);
+						console.log('🔵 Deposit tx returned:', depositTx);
+						console.log('🔵 Deposit tx hash:', depositTx?.hash);
+						console.log('🔵 Deposit tx type:', typeof depositTx);
 					} catch (timeoutErr: any) {
+						console.log('🔴 Promise.race caught an error');
+						console.log('🔴 Error type:', typeof timeoutErr);
+						console.log('🔴 Error message:', timeoutErr?.message);
+						console.log('🔴 Full error:', timeoutErr);
+						
+						// Clean up intervals
+						if (balanceCheckInterval) clearInterval(balanceCheckInterval);
 						clearInterval(depositCountdownInterval);
 						setCountdown(0);
 						
 						// Check if this is a contract revert (not a timeout)
 						if (timeoutErr.message !== 'DEPOSIT_CALL_TIMEOUT') {
-							console.error('Deposit call failed with error:', timeoutErr);
+							console.error('🔴 Deposit call failed with error (not timeout):', timeoutErr);
 							let errorMsg = 'Deposit transaction failed';
 							if (timeoutErr.reason) {
 								errorMsg = `Deposit failed: ${timeoutErr.reason}`;
@@ -305,7 +404,7 @@ export default function Deposit() {
 						
 						// Handle timeout case
 						if (timeoutErr.message === 'DEPOSIT_CALL_TIMEOUT') {
-							console.warn('Deposit call timed out, but transaction may still be pending. Checking vault balance...');
+							console.warn('🟡 Deposit call timed out, but transaction may still be pending. Checking vault balance...');
 							// Wait a bit and check vault balance to see if deposit succeeded
 							setCountdown(5);
 							setCountdownMax(5);
@@ -356,7 +455,22 @@ export default function Deposit() {
 					}
 					
 					if (depositTx) {
-						console.log('Deposit tx hash:', depositTx?.hash);
+						// Log detailed transaction metadata
+						console.log('✅ Deposit Transaction Sent:', {
+							hash: depositTx.hash,
+							from: depositTx.from,
+							to: depositTx.to,
+							value: depositTx.value?.toString(),
+							gasLimit: depositTx.gasLimit?.toString(),
+							gasPrice: depositTx.gasPrice?.toString(),
+							maxFeePerGas: depositTx.maxFeePerGas?.toString(),
+							maxPriorityFeePerGas: depositTx.maxPriorityFeePerGas?.toString(),
+							nonce: depositTx.nonce,
+							chainId: depositTx.chainId,
+							type: depositTx.type,
+							data: depositTx.data
+						});
+						
 						setDepositStatus('Deposit transaction sent. Waiting for confirmation...');
 						// Show BaseScan link as plain string if available
 						if (depositTx.hash) {
@@ -364,9 +478,24 @@ export default function Deposit() {
 								`Deposit transaction sent. Waiting for confirmation...\nView on BaseScan: https://basescan.org/tx/${depositTx.hash}`
 							);
 						}
-						console.log('About to wait for deposit tx confirmation...');
+						console.log('⏳ Waiting for deposit tx confirmation...');
 						const receipt = await depositTx.wait();
-						console.log('Deposit tx confirmed, receipt:', receipt);
+						
+						// Log detailed receipt metadata
+						console.log('✅ Deposit Transaction Confirmed:', {
+							transactionHash: receipt.hash,
+							blockNumber: receipt.blockNumber,
+							blockHash: receipt.blockHash,
+							from: receipt.from,
+							to: receipt.to,
+							gasUsed: receipt.gasUsed?.toString(),
+							cumulativeGasUsed: receipt.cumulativeGasUsed?.toString(),
+							effectiveGasPrice: receipt.gasPrice?.toString(),
+							status: receipt.status,
+							logsBloom: receipt.logsBloom,
+							events: receipt.logs?.length || 0,
+							confirmations: await receipt.confirmations()
+						});
 						setDepositSuccess(true);
 						setDepositStatus('Deposit successful!');
 						console.log('Deposit status set to successful');
