@@ -102,7 +102,7 @@ export default function Deposit() {
 		);
 	}
 
-	async function handleDeposit() {
+	async function handleDeposit(depositAmount?: number) {
 		setDepositLoading(true);
 		setDepositError(null);
 		setDepositSuccess(false);
@@ -116,7 +116,9 @@ export default function Deposit() {
 			const signer = await provider.getSigner();
 			const address = await signer.getAddress();
 			const vault = new Contract(VAULT_ADDRESS, VAULT_ABI, signer);
-			const amount = BigInt(Math.floor(usdcBalance! * 1e6)); // USDC has 6 decimals
+			// Use provided amount or default to full balance
+			const amountToDeposit = depositAmount !== undefined ? depositAmount : usdcBalance!;
+			const amount = BigInt(Math.floor(amountToDeposit * 1e6)); // USDC has 6 decimals
 
 			// Log deposit inputs
 			console.log('Deposit input audit:', {
@@ -285,11 +287,29 @@ export default function Deposit() {
 					} catch (timeoutErr: any) {
 						clearInterval(depositCountdownInterval);
 						setCountdown(0);
+						
+						// Check if this is a contract revert (not a timeout)
+						if (timeoutErr.message !== 'DEPOSIT_CALL_TIMEOUT') {
+							console.error('Deposit call failed with error:', timeoutErr);
+							let errorMsg = 'Deposit transaction failed';
+							if (timeoutErr.reason) {
+								errorMsg = `Deposit failed: ${timeoutErr.reason}`;
+							} else if (timeoutErr.message) {
+								errorMsg = `Deposit failed: ${timeoutErr.message}`;
+							}
+							setDepositStatus(errorMsg);
+							setDepositLoading(false);
+							setCountdown(0);
+							throw timeoutErr;
+						}
+						
+						// Handle timeout case
 						if (timeoutErr.message === 'DEPOSIT_CALL_TIMEOUT') {
 							console.warn('Deposit call timed out, but transaction may still be pending. Checking vault balance...');
 							// Wait a bit and check vault balance to see if deposit succeeded
 							setCountdown(5);
 							setCountdownMax(5);
+							setDepositStatus('Transaction timed out. Checking if it succeeded on-chain...');
 							await new Promise(resolve => setTimeout(resolve, 5000));
 							setCountdown(0);
 							if (typeof vault.balanceOf === 'function') {
@@ -299,6 +319,14 @@ export default function Deposit() {
 								if (newVaultBalanceNum > (vaultBalance || 0)) {
 									console.log('Deposit succeeded despite timeout!');
 									setVaultBalance(newVaultBalanceNum);
+									// Update USDC balance
+									const usdc = new Contract(USDC_ADDRESS, USDC_ABI, provider);
+									if (typeof usdc.balanceOf === 'function') {
+										const balance = await usdc.balanceOf(address);
+										const newUsdcBalance = Number(formatUnits(balance, 6));
+										console.log('Updated USDC balance:', newUsdcBalance);
+										setUsdcBalance(newUsdcBalance);
+									}
 									setDepositSuccess(true);
 									setDepositStatus('Deposit successful!');
 									console.log('Deposit status set to successful');
@@ -310,13 +338,20 @@ export default function Deposit() {
 									// Skip the rest of deposit flow
 									depositTx = null;
 								} else {
-									throw new Error('Deposit transaction call timed out. Please check your wallet or BaseScan to verify the transaction.');
+									// Transaction timed out and balance didn't increase
+									console.warn('Deposit transaction timed out and balance did not increase');
+									setDepositStatus('Transaction timed out. Please check your wallet or BaseScan to verify the transaction status.');
+									setDepositLoading(false);
+									setCountdown(0);
+									return; // Exit the function gracefully
 								}
 							} else {
-								throw new Error('Cannot verify deposit status. Please check your wallet or BaseScan.');
+								console.error('Cannot verify deposit status - balanceOf not available');
+								setDepositStatus('Cannot verify deposit status. Please check your wallet or BaseScan.');
+								setDepositLoading(false);
+								setCountdown(0);
+								return; // Exit the function gracefully
 							}
-						} else {
-							throw timeoutErr;
 						}
 					}
 					
@@ -410,23 +445,105 @@ export default function Deposit() {
 	return (
 		<div style={{ display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
 			<p><strong>Interact with USDC Vault</strong></p>
-			<div>Your ETH balance on Base: {ethBalance === null ? 'Loading...' : ethBalance}</div>
-			<div>Your USDC balance on Base: {usdcBalance === null ? 'Loading...' : usdcBalance}</div>
-			<div>Your Vault balance: {vaultBalance === null ? 'Loading...' : vaultBalance}</div>
+			<div>Your ETH balance on Base: {ethBalance === null ? 'Loading...' : ethBalance.toFixed(8)}</div>
+			<div>Your USDC balance on Base: {usdcBalance === null ? 'Loading...' : `$${usdcBalance.toFixed(2)}`}</div>
+			{/* <div>Your Vault balance: {vaultBalance === null ? 'Loading...' : `$${vaultBalance.toFixed(2)}`}</div> */}
 			
 			{usdcBalance !== null && usdcBalance > 0 && ethBalance !== null && ethBalance > 0 && (
-				<button onClick={handleDeposit} disabled={depositLoading || approvalLoading} style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}>
-					{depositLoading ? (depositStatus || 'Depositing...') : <>
-						Deposit to USDC Vault
-						<span style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
-							{/* Down arrow SVG icon */}
-							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M5 8L10 13L15 8" stroke="#222" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-							</svg>
-						</span>
-					</>
-					}
-				</button>
+				<div style={{ display: 'flex', gap: '0.5em', margin: '1em 0', flexWrap: 'wrap' }}>
+					{/* Always show $1 button if balance >= $1 */}
+					{usdcBalance >= 1 && (
+						<button 
+							onClick={() => handleDeposit(1)} 
+							disabled={depositLoading || approvalLoading}
+							style={{ 
+								display: 'flex', 
+								alignItems: 'center', 
+								gap: '0.5em',
+								padding: '0.75em 1em',
+								borderRadius: '8px',
+								border: '1px solid #ddd',
+								background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+								color: 'white',
+								cursor: depositLoading || approvalLoading ? 'not-allowed' : 'pointer',
+								fontWeight: 'bold',
+								fontSize: '0.95em',
+								opacity: depositLoading || approvalLoading ? 0.6 : 1
+							}}
+						>
+							{depositLoading ? (depositStatus || 'Depositing...') : <>
+								Deposit $1
+								<span style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
+									<svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M5 8L10 13L15 8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+									</svg>
+								</span>
+							</>}
+						</button>
+					)}
+					
+					{/* Show $5 button if balance >= $5 */}
+					{usdcBalance >= 5 && (
+						<button 
+							onClick={() => handleDeposit(5)} 
+							disabled={depositLoading || approvalLoading}
+							style={{ 
+								display: 'flex', 
+								alignItems: 'center', 
+								gap: '0.5em',
+								padding: '0.75em 1em',
+								borderRadius: '8px',
+								border: '1px solid #ddd',
+								background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+								color: 'white',
+								cursor: depositLoading || approvalLoading ? 'not-allowed' : 'pointer',
+								fontWeight: 'bold',
+								fontSize: '0.95em',
+								opacity: depositLoading || approvalLoading ? 0.6 : 1
+							}}
+						>
+							{depositLoading ? '' : <>
+								Deposit $5
+								<span style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
+									<svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M5 8L10 13L15 8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+									</svg>
+								</span>
+							</>}
+						</button>
+					)}
+					
+					{/* Show $20 button if balance >= $20 */}
+					{usdcBalance >= 20 && (
+						<button 
+							onClick={() => handleDeposit(20)} 
+							disabled={depositLoading || approvalLoading}
+							style={{ 
+								display: 'flex', 
+								alignItems: 'center', 
+								gap: '0.5em',
+								padding: '0.75em 1em',
+								borderRadius: '8px',
+								border: '1px solid #ddd',
+								background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+								color: 'white',
+								cursor: depositLoading || approvalLoading ? 'not-allowed' : 'pointer',
+								fontWeight: 'bold',
+								fontSize: '0.95em',
+								opacity: depositLoading || approvalLoading ? 0.6 : 1
+							}}
+						>
+							{depositLoading ? '' : <>
+								Deposit $20
+								<span style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
+									<svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M5 8L10 13L15 8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+									</svg>
+								</span>
+							</>}
+						</button>
+					)}
+				</div>
 			)}
 
 			{/* Countdown Timer with Pie Chart */}

@@ -18,7 +18,11 @@ const VAULT_ABI = [
     // balanceOf function
     { "inputs": [
         { "internalType": "address", "name": "account", "type": "address" }
-    ], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }
+    ], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" },
+    // previewWithdraw function - returns shares needed for assets
+    { "inputs": [
+        { "internalType": "uint256", "name": "assets", "type": "uint256" }
+    ], "name": "previewWithdraw", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }
 ];
 
 interface WithdrawProps {
@@ -37,7 +41,7 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
     const [countdown, setCountdown] = useState<number>(0);
     const [countdownMax, setCountdownMax] = useState<number>(30);
 
-    async function handleWithdraw() {
+    async function handleWithdraw(withdrawAmount?: number) {
     setWithdrawLoading(true);
     setWithdrawStatus('Preparing withdrawal...');
     setWithdrawSuccess(false);
@@ -50,9 +54,27 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
             const signer = await provider.getSigner();
             const address = await signer.getAddress();
             const vault = new Contract(VAULT_ADDRESS, VAULT_ABI, signer);
-            // Test with 1 USDC (1e6 units)
-            const amount = BigInt(1_000_000); // 1 USDC
-            const maxShares = BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // max uint256
+            // Use provided amount or default to full balance (1 USDC for testing)
+            const amountToWithdraw = withdrawAmount !== undefined ? withdrawAmount : (vaultBalance || 1);
+            const amount = BigInt(Math.floor(amountToWithdraw * 1e6)); // USDC has 6 decimals
+            
+            // Get the actual shares needed for this withdrawal using previewWithdraw
+            let maxShares = BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // default to max uint256
+            if (typeof vault.previewWithdraw === 'function') {
+                try {
+                    const sharesNeeded = await vault.previewWithdraw(amount);
+                    // Add 1% buffer to account for potential slippage
+                    maxShares = (sharesNeeded * BigInt(101)) / BigInt(100);
+                    console.log('Shares needed for withdrawal:', {
+                        assets: amount.toString(),
+                        sharesNeeded: sharesNeeded.toString(),
+                        maxSharesWithBuffer: maxShares.toString()
+                    });
+                } catch (previewErr) {
+                    console.warn('Could not preview withdraw, using max uint256:', previewErr);
+                }
+            }
+            
             console.log('Withdraw debug:', {
                 vaultAddress: VAULT_ADDRESS,
                 abi: VAULT_ABI,
@@ -92,11 +114,29 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                     } catch (timeoutErr: any) {
                         clearInterval(withdrawCountdownInterval);
                         setCountdown(0);
+                        
+                        // Check if this is a contract revert (not a timeout)
+                        if (timeoutErr.message !== 'WITHDRAW_CALL_TIMEOUT') {
+                            console.error('Withdraw call failed with error:', timeoutErr);
+                            let errorMsg = 'Withdraw transaction failed';
+                            if (timeoutErr.reason) {
+                                errorMsg = `Withdraw failed: ${timeoutErr.reason}`;
+                            } else if (timeoutErr.message) {
+                                errorMsg = `Withdraw failed: ${timeoutErr.message}`;
+                            }
+                            setWithdrawStatus(errorMsg);
+                            setWithdrawLoading(false);
+                            setCountdown(0);
+                            throw timeoutErr;
+                        }
+                        
+                        // Handle timeout case
                         if (timeoutErr.message === 'WITHDRAW_CALL_TIMEOUT') {
                             console.warn('Withdraw call timed out, but transaction may still be pending. Checking vault balance...');
                             // Wait a bit and check vault balance to see if withdraw succeeded
                             setCountdown(5);
                             setCountdownMax(5);
+                            setWithdrawStatus('Transaction timed out. Checking if it succeeded on-chain...');
                             await new Promise(resolve => setTimeout(resolve, 5000));
                             setCountdown(0);
                             if (typeof vault.balanceOf === 'function') {
@@ -125,13 +165,20 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                                     // Skip the rest of withdraw flow
                                     withdrawTx = null;
                                 } else {
-                                    throw new Error('Withdraw transaction call timed out. Please check your wallet or BaseScan to verify the transaction.');
+                                    // Transaction timed out and balance didn't change
+                                    console.warn('Withdraw transaction timed out and balance did not decrease');
+                                    setWithdrawStatus('Transaction timed out. Please check your wallet or BaseScan to verify the transaction status.');
+                                    setWithdrawLoading(false);
+                                    setCountdown(0);
+                                    return; // Exit the function gracefully
                                 }
                             } else {
-                                throw new Error('Cannot verify withdraw status. Please check your wallet or BaseScan.');
+                                console.error('Cannot verify withdraw status - balanceOf not available');
+                                setWithdrawStatus('Cannot verify withdraw status. Please check your wallet or BaseScan.');
+                                setWithdrawLoading(false);
+                                setCountdown(0);
+                                return; // Exit the function gracefully
                             }
-                        } else {
-                            throw timeoutErr;
                         }
                     }
                     
@@ -270,19 +317,75 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
             {withdrawSuccess && !withdrawStatus && (
                 <div style={{ color: 'green' }}>Withdraw successful!</div>
             )}
-            <button onClick={handleWithdraw} disabled={withdrawLoading || !vaultBalance || vaultBalance < 1} style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}>
-                {withdrawLoading ? (withdrawStatus || 'Withdrawing...') : <>
-                    Withdraw from Vault
-                    <span style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
-                        {/* Up arrow SVG icon */}
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M5 12L10 7L15 12" stroke="#222" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                    </span>
-                </>}
-            </button>
-            <div>Your Vault balance: {vaultBalance === null ? 'Loading...' : vaultBalance}</div>
-            <div>Your USDC balance: {usdcBalance === null ? 'Loading...' : usdcBalance}</div>
+            
+            <div style={{ display: 'flex', gap: '0.5em', margin: '1em 0', flexWrap: 'wrap' }}>
+                {/* Dynamic amount button */}
+                {vaultBalance && vaultBalance >= 1 && (
+                    <button 
+                        onClick={() => handleWithdraw(
+                            vaultBalance < 5 ? 1 : vaultBalance < 20 ? 5 : 20
+                        )} 
+                        disabled={withdrawLoading}
+                        style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '0.5em',
+                            padding: '0.75em 1em',
+                            borderRadius: '8px',
+                            border: '1px solid #ddd',
+                            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                            color: 'white',
+                            cursor: withdrawLoading ? 'not-allowed' : 'pointer',
+                            fontWeight: 'bold',
+                            fontSize: '0.95em',
+                            opacity: withdrawLoading ? 0.6 : 1
+                        }}
+                    >
+                        {withdrawLoading ? (withdrawStatus || 'Withdrawing...') : <>
+                            Withdraw ${vaultBalance < 5 ? '1' : vaultBalance < 20 ? '5' : '20'}
+                            <span style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
+                                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 7L15 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </span>
+                        </>}
+                    </button>
+                )}
+                
+                {/* Withdraw All button */}
+                {vaultBalance && vaultBalance > 0 && (
+                    <button 
+                        onClick={() => handleWithdraw(vaultBalance)} 
+                        disabled={withdrawLoading}
+                        style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '0.5em',
+                            padding: '0.75em 1em',
+                            borderRadius: '8px',
+                            border: '1px solid #ddd',
+                            background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                            color: 'white',
+                            cursor: withdrawLoading ? 'not-allowed' : 'pointer',
+                            fontWeight: 'bold',
+                            fontSize: '0.95em',
+                            opacity: withdrawLoading ? 0.6 : 1
+                        }}
+                    >
+                        {withdrawLoading ? '' : <>
+                            Withdraw All (${vaultBalance?.toFixed(2)})
+                            <span style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
+                                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 12L10 7L15 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </span>
+                        </>}
+                    </button>
+                )}
+            </div>
+            
+            <div>Your Vault balance: {vaultBalance === null ? 'Loading...' : `$${vaultBalance.toFixed(2)}`}</div>
+            {/* <div>Your USDC balance: {usdcBalance === null ? 'Loading...' : `$${usdcBalance.toFixed(2)}`}</div> */}
         </div>
     );
 }
