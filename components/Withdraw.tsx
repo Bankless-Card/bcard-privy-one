@@ -106,7 +106,6 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                     
                     // Declare interval outside try block so it's accessible in catch
                     let balanceCheckInterval: NodeJS.Timeout | null = null;
-                    let withdrawDetectedEarly = false; // Flag to track if periodic check found withdrawal
                     let withdrawTx;
                     
                     try {
@@ -119,9 +118,8 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                                         const currentVaultBalanceNum = Number(formatUnits(currentVaultBalance, 6));
                                         console.log('🔍 Periodic withdraw balance check:', currentVaultBalanceNum, 'Previous:', vaultBalance);
                                         
-                                        if (currentVaultBalanceNum < (vaultBalance || 0) && !withdrawDetectedEarly) {
+                                        if (currentVaultBalanceNum < (vaultBalance || 0)) {
                                             console.log('✅ Withdraw detected via periodic check!');
-                                            withdrawDetectedEarly = true;
                                             
                                             if (balanceCheckInterval) clearInterval(balanceCheckInterval);
                                             clearInterval(withdrawCountdownInterval);
@@ -169,13 +167,6 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                         if (balanceCheckInterval) clearInterval(balanceCheckInterval);
                         clearInterval(withdrawCountdownInterval);
                         setCountdown(0);
-                        
-                        // Check if withdrawal was already detected by periodic check
-                        if (withdrawDetectedEarly) {
-                            console.log('🟢 Withdraw already confirmed by periodic check, skipping timeout handling');
-                            withdrawTx = null; // Skip the normal withdraw flow
-                            return; // Exit function early since withdrawal is complete
-                        }
                         
                         // Check if this is a contract revert (not a timeout)
                         if (timeoutErr.message !== 'WITHDRAW_CALL_TIMEOUT') {

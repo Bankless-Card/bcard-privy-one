@@ -353,7 +353,6 @@ export default function Deposit() {
 					
 					// Declare interval outside try block so it's accessible in catch
 					let balanceCheckInterval: NodeJS.Timeout | null = null;
-					let depositDetectedEarly = false; // Flag to track if periodic check found deposit
 					let depositTx;
 					
 					try {
@@ -368,9 +367,8 @@ export default function Deposit() {
 										const currentVaultBalanceNum = Number(formatUnits(currentVaultBalance, 6));
 										console.log('🔍 Periodic balance check:', currentVaultBalanceNum, 'Previous:', vaultBalance);
 										
-										if (currentVaultBalanceNum > (vaultBalance || 0) && !depositDetectedEarly) {
+										if (currentVaultBalanceNum > (vaultBalance || 0)) {
 											console.log('✅ Deposit detected via periodic check!');
-											depositDetectedEarly = true;
 											
 											if (balanceCheckInterval) clearInterval(balanceCheckInterval);
 											clearInterval(depositCountdownInterval);
@@ -425,13 +423,6 @@ export default function Deposit() {
 						if (balanceCheckInterval) clearInterval(balanceCheckInterval);
 						clearInterval(depositCountdownInterval);
 						setCountdown(0);
-						
-						// Check if deposit was already detected by periodic check
-						if (depositDetectedEarly) {
-							console.log('🟢 Deposit already confirmed by periodic check, skipping timeout handling');
-							depositTx = null; // Skip the normal deposit flow
-							return; // Exit function early since deposit is complete
-						}
 						
 						// Check if this is a contract revert (not a timeout)
 						if (timeoutErr.message !== 'DEPOSIT_CALL_TIMEOUT') {
