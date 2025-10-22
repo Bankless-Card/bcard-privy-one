@@ -165,7 +165,6 @@ export default function Deposit() {
 						
 						// Declare interval outside try block so it's accessible in catch
 						let approvalCheckInterval: NodeJS.Timeout | null = null;
-						let approvalDetectedEarly = false; // Flag to track if periodic check found approval
 						let approveTx;
 						
 						try {
@@ -177,10 +176,8 @@ export default function Deposit() {
 											const currentAllowance = await usdcERC20.allowance(address, VAULT_ADDRESS);
 											console.log('🔍 Periodic allowance check:', currentAllowance.toString(), 'Required:', amount.toString());
 											
-											if (currentAllowance >= amount && !approvalDetectedEarly) {
+											if (currentAllowance >= amount) {
 												console.log('✅ Approval detected via periodic check!');
-												approvalDetectedEarly = true;
-												
 												if (approvalCheckInterval) clearInterval(approvalCheckInterval);
 												clearInterval(countdownInterval);
 												setCountdown(0);
@@ -214,11 +211,7 @@ export default function Deposit() {
 							clearInterval(countdownInterval);
 							setCountdown(0);
 							
-							// Check if approval was already detected by periodic check
-							if (approvalDetectedEarly) {
-								console.log('🟢 Approval already confirmed by periodic check, skipping timeout handling');
-								approveTx = null; // Skip the normal approval flow
-							} else if (timeoutErr.message === 'APPROVE_CALL_TIMEOUT') {
+							if (timeoutErr.message === 'APPROVE_CALL_TIMEOUT') {
 								console.warn('🟡 Approve call timed out, but transaction may still be pending. Checking allowance again...');
 								// Wait a bit and check allowance again
 								setCountdown(3);
