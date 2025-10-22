@@ -163,18 +163,63 @@ export default function Deposit() {
 							setTimeout(() => reject(new Error('APPROVE_CALL_TIMEOUT')), 30000); // 30 second timeout
 						});
 						
+						// Declare interval outside try block so it's accessible in catch
+						let approvalCheckInterval: NodeJS.Timeout | null = null;
+						let approvalDetectedEarly = false; // Flag to track if periodic check found approval
 						let approveTx;
+						
 						try {
+							// Start periodic allowance checks every 5 seconds
+							const startPeriodicAllowanceCheck = () => {
+								approvalCheckInterval = setInterval(async () => {
+									if (typeof usdcERC20.allowance === 'function') {
+										try {
+											const currentAllowance = await usdcERC20.allowance(address, VAULT_ADDRESS);
+											console.log('🔍 Periodic allowance check:', currentAllowance.toString(), 'Required:', amount.toString());
+											
+											if (currentAllowance >= amount && !approvalDetectedEarly) {
+												console.log('✅ Approval detected via periodic check!');
+												approvalDetectedEarly = true;
+												
+												if (approvalCheckInterval) clearInterval(approvalCheckInterval);
+												clearInterval(countdownInterval);
+												setCountdown(0);
+												
+												setApprovalSuccess(true);
+												setDepositStatus('Approval confirmed! Proceeding to deposit...');
+												setApprovalLoading(false);
+											}
+										} catch (checkErr) {
+											console.log('🔍 Allowance check error (will retry):', checkErr);
+										}
+									}
+								}, 5000); // Check every 5 seconds
+							};
+							
+							// Start periodic checks
+							startPeriodicAllowanceCheck();
+							
 							approveTx = await Promise.race([approvePromise, timeoutPromise]);
+							
+							// If we got here, the promise resolved, so stop periodic checks
+							if (approvalCheckInterval) clearInterval(approvalCheckInterval);
+							
 							clearInterval(countdownInterval);
 							setCountdown(0);
 							console.log('Approve tx returned:', approveTx);
 							console.log('Approve tx hash:', approveTx?.hash);
 						} catch (timeoutErr: any) {
+							// Clean up intervals
+							if (approvalCheckInterval) clearInterval(approvalCheckInterval);
 							clearInterval(countdownInterval);
 							setCountdown(0);
-							if (timeoutErr.message === 'APPROVE_CALL_TIMEOUT') {
-								console.warn('Approve call timed out, but transaction may still be pending. Checking allowance again...');
+							
+							// Check if approval was already detected by periodic check
+							if (approvalDetectedEarly) {
+								console.log('🟢 Approval already confirmed by periodic check, skipping timeout handling');
+								approveTx = null; // Skip the normal approval flow
+							} else if (timeoutErr.message === 'APPROVE_CALL_TIMEOUT') {
+								console.warn('🟡 Approve call timed out, but transaction may still be pending. Checking allowance again...');
 								// Wait a bit and check allowance again
 								setCountdown(3);
 								setCountdownMax(3);
@@ -315,6 +360,7 @@ export default function Deposit() {
 					
 					// Declare interval outside try block so it's accessible in catch
 					let balanceCheckInterval: NodeJS.Timeout | null = null;
+					let depositDetectedEarly = false; // Flag to track if periodic check found deposit
 					let depositTx;
 					
 					try {
@@ -329,8 +375,10 @@ export default function Deposit() {
 										const currentVaultBalanceNum = Number(formatUnits(currentVaultBalance, 6));
 										console.log('🔍 Periodic balance check:', currentVaultBalanceNum, 'Previous:', vaultBalance);
 										
-										if (currentVaultBalanceNum > (vaultBalance || 0)) {
+										if (currentVaultBalanceNum > (vaultBalance || 0) && !depositDetectedEarly) {
 											console.log('✅ Deposit detected via periodic check!');
+											depositDetectedEarly = true;
+											
 											if (balanceCheckInterval) clearInterval(balanceCheckInterval);
 											clearInterval(depositCountdownInterval);
 											setCountdown(0);
@@ -347,13 +395,11 @@ export default function Deposit() {
 											
 											setDepositSuccess(true);
 											setDepositStatus('Deposit successful!');
+											setDepositLoading(false);
+											
 											setTimeout(() => {
 												setDepositStatus(null);
 											}, 5000);
-											
-											// Set depositTx to null to skip the normal flow
-											depositTx = null;
-											setDepositLoading(false);
 										}
 									} catch (checkErr) {
 										console.log('🔍 Balance check error (will retry):', checkErr);
@@ -386,6 +432,13 @@ export default function Deposit() {
 						if (balanceCheckInterval) clearInterval(balanceCheckInterval);
 						clearInterval(depositCountdownInterval);
 						setCountdown(0);
+						
+						// Check if deposit was already detected by periodic check
+						if (depositDetectedEarly) {
+							console.log('🟢 Deposit already confirmed by periodic check, skipping timeout handling');
+							depositTx = null; // Skip the normal deposit flow
+							return; // Exit function early since deposit is complete
+						}
 						
 						// Check if this is a contract revert (not a timeout)
 						if (timeoutErr.message !== 'DEPOSIT_CALL_TIMEOUT') {
