@@ -470,7 +470,12 @@ export default function Deposit() {
 			)}
 
 			{vaultBalance !== null && vaultBalance !== 0 && (
-				<Withdraw />
+				<Withdraw 
+					vaultBalance={vaultBalance} 
+					setVaultBalance={setVaultBalance}
+					usdcBalance={usdcBalance}
+					setUsdcBalance={setUsdcBalance}
+				/>
 			)}
 
 			<div style={{ marginTop: 'auto', paddingTop: '2rem', fontSize: '0.9em', color: '#888' }}>

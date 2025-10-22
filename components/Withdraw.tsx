@@ -1,7 +1,11 @@
 import { usePrivy, useWallets } from '@privy-io/react-auth';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Contract, formatUnits, BrowserProvider } from 'ethers';
 
+const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'; // USDC on Base
+const USDC_ABI = [
+    "function balanceOf(address owner) view returns (uint256)"
+];
 const VAULT_ADDRESS = '0x119d2bc7bb9b94f5518ce30169457ff358b47535';
 const VAULT_ABI = [
     // withdraw function (IERC4626 style)
@@ -17,48 +21,21 @@ const VAULT_ABI = [
     ], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }
 ];
 
-export default function Withdraw() {
+interface WithdrawProps {
+    vaultBalance: number | null;
+    setVaultBalance: (balance: number) => void;
+    usdcBalance: number | null;
+    setUsdcBalance: (balance: number) => void;
+}
+
+export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, setUsdcBalance }: WithdrawProps) {
     const { ready, authenticated } = usePrivy();
     const { wallets } = useWallets();
-    const [vaultBalance, setVaultBalance] = useState<number | null>(null);
-    const [walletAddress, setWalletAddress] = useState<string | null>(null);
     const [withdrawLoading, setWithdrawLoading] = useState(false);
     const [withdrawStatus, setWithdrawStatus] = useState<string | null>(null);
     const [withdrawSuccess, setWithdrawSuccess] = useState(false);
     const [countdown, setCountdown] = useState<number>(0);
     const [countdownMax, setCountdownMax] = useState<number>(30);
-
-    useEffect(() => {
-        const wallet = wallets && wallets.length > 0 ? wallets[0] : null;
-        async function fetchVaultBalance() {
-            if (wallet) {
-                try {
-                    const privyProvider = await wallet.getEthereumProvider();
-                    const provider = new BrowserProvider(privyProvider);
-                    const signer = await provider.getSigner();
-                    const address = await signer.getAddress();
-                    setWalletAddress(address);
-                    const vault = new Contract(VAULT_ADDRESS, VAULT_ABI, provider);
-                    if (typeof vault.balanceOf === 'function') {
-                        const vBalance = await vault.balanceOf(address);
-                        setVaultBalance(Number(formatUnits(vBalance, 6)));
-                    } else {
-                        setVaultBalance(0);
-                    }
-                } catch (err) {
-                    setVaultBalance(0);
-                    setWalletAddress(null);
-                }
-            } else {
-                setWalletAddress(null);
-            }
-        }
-        if (ready && authenticated && wallet) {
-            fetchVaultBalance();
-        } else if (ready && authenticated && !wallet) {
-            setWalletAddress(null);
-        }
-    }, [ready, authenticated, wallets]);
 
     async function handleWithdraw() {
     setWithdrawLoading(true);
@@ -129,6 +106,14 @@ export default function Withdraw() {
                                 if (newVaultBalanceNum < (vaultBalance || 0)) {
                                     console.log('Withdraw succeeded despite timeout!');
                                     setVaultBalance(newVaultBalanceNum);
+                                    // Update USDC balance
+                                    const usdc = new Contract(USDC_ADDRESS, USDC_ABI, provider);
+                                    if (typeof usdc.balanceOf === 'function') {
+                                        const balance = await usdc.balanceOf(address);
+                                        const newUsdcBalance = Number(formatUnits(balance, 6));
+                                        console.log('Updated USDC balance:', newUsdcBalance);
+                                        setUsdcBalance(newUsdcBalance);
+                                    }
                                     setWithdrawSuccess(true);
                                     setWithdrawStatus('Withdraw successful!');
                                     console.log('Withdraw status set to successful');
@@ -168,7 +153,17 @@ export default function Withdraw() {
                         // Update vault balance
                         if (typeof vault.balanceOf === 'function') {
                             const newVaultBalance = await vault.balanceOf(address);
-                            setVaultBalance(Number(formatUnits(newVaultBalance, 6)));
+                            const newVaultBalanceNum = Number(formatUnits(newVaultBalance, 6));
+                            console.log('Updated vault balance:', newVaultBalanceNum);
+                            setVaultBalance(newVaultBalanceNum);
+                        }
+                        // Update USDC balance
+                        const usdc = new Contract(USDC_ADDRESS, USDC_ABI, provider);
+                        if (typeof usdc.balanceOf === 'function') {
+                            const balance = await usdc.balanceOf(address);
+                            const newUsdcBalance = Number(formatUnits(balance, 6));
+                            console.log('Updated USDC balance:', newUsdcBalance);
+                            setUsdcBalance(newUsdcBalance);
                         }
                         setTimeout(() => {
                             console.log('Clearing withdraw status after timeout');
@@ -222,7 +217,7 @@ export default function Withdraw() {
     if (!authenticated) {
         return <div>Please log in to withdraw.</div>;
     }
-    if (!walletAddress || !vaultBalance || vaultBalance <= 0) {
+    if (!vaultBalance || vaultBalance <= 0) {
         return null;
     }
     return (
@@ -286,7 +281,8 @@ export default function Withdraw() {
                     </span>
                 </>}
             </button>
-            <div>Your Vault balance: {vaultBalance}</div>
+            <div>Your Vault balance: {vaultBalance === null ? 'Loading...' : vaultBalance}</div>
+            <div>Your USDC balance: {usdcBalance === null ? 'Loading...' : usdcBalance}</div>
         </div>
     );
 }
