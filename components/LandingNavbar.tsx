@@ -23,7 +23,7 @@ export default function LandingNavbar() {
               About
             </Link>
             <Link
-              href="/content/test"
+              href="#test"
               className={styles.navItem}
             >
               Vote
