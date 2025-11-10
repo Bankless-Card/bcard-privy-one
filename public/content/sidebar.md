@@ -1,0 +1,1 @@
+{{component:Vote props={"onlyActiveProposals":true}}}

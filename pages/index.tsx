@@ -1,57 +1,59 @@
 import LandingPage from "../components/landing-page";
 import { usePrivy } from "@privy-io/react-auth";
-import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import Head from "next/head";
-import { Logo } from "../components/logo";
-import { getRoute } from "../utils/routes";
 import { useRouter } from 'next/router';
 
-
 export default function HomePage() {
-	const { ready, authenticated } = usePrivy();
-	const [markdownContent, setMarkdownContent] = useState('');
+	const { ready } = usePrivy();
+	const [mainContent, setMainContent] = useState('');
+	const [sidebarContent, setSidebarContent] = useState('');
+	const [hash, setHash] = useState('');
 	const router = useRouter();
-	
 
 	useEffect(() => {
-		const fetchContent = async () => {
-			const hash = window.location.hash.substring(1);
-							const slug = hash ? hash : 'home';			
+		const fetchSidebarContent = async () => {
 			try {
-				const response = await fetch(`/content/${slug}.md`);
-				if (!response.ok) {
-					// If the specific file is not found, default to black-flag-content
-					const defaultResponse = await fetch('/content/home.md');
-					const defaultText = await defaultResponse.text();
-					setMarkdownContent(defaultText);
-					return;
-				}
+				const response = await fetch('/content/sidebar.md');
 				const text = await response.text();
-				setMarkdownContent(text);
+				setSidebarContent(text);
 			} catch (error) {
-				console.error('Error fetching markdown content:', error);
-				// Fallback to default content on error
-				const defaultResponse = await fetch('/content/home.md');
-				const defaultText = await defaultResponse.text();
-				setMarkdownContent(defaultText);
+				console.error('Error fetching sidebar content:', error);
 			}
 		};
 
-		// Fetch content on initial load
-		fetchContent();
+		fetchSidebarContent();
+	}, []);
 
-		// Listen for Next.js router hash changes
-		router.events.on('hashChangeComplete', fetchContent);
+	useEffect(() => {
+		const handleHashChange = async (url: string) => {
+			const currentHash = url.split('#')[1] || 'home';
+			setHash(currentHash);
 
-		// Cleanup event listener on component unmount
+			try {
+				const response = await fetch(`/content/${currentHash}.md`);
+				if (response.ok) {
+					const text = await response.text();
+					setMainContent(text);
+				} else {
+					// Fallback to home.md if the specific markdown is not found
+					const fallbackResponse = await fetch('/content/home.md');
+					const text = await fallbackResponse.text();
+					setMainContent(text);
+				}
+			} catch (error) {
+				console.error('Error fetching main content:', error);
+			}
+		};
+
+		handleHashChange(window.location.hash);
+
+		router.events.on('hashChangeComplete', handleHashChange);
+
 		return () => {
-			router.events.off('hashChangeComplete', fetchContent);
+			router.events.off('hashChangeComplete', handleHashChange);
 		};
 	}, [router.events]);
 
-
-	// Show nothing until Privy is ready to avoid flashing content
 	if (!ready) {
 		return (
 			<div className="bf-theme min-h-screen flex items-center justify-center">
@@ -60,5 +62,5 @@ export default function HomePage() {
 		);
 	}
 
-	return <LandingPage markdownContent={markdownContent} />;
+	return <LandingPage mainContent={mainContent} sidebarContent={sidebarContent} hash={hash} />;
 }

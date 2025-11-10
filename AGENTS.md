@@ -46,6 +46,7 @@ This file provides essential context and instructions for AI agents interacting 
 *   **Core Logic/Utilities:** `utils/`
 *   **Component Library:** `components/`
 *   **Styling:** `styles/`
+*   **Spec:** `spec/`
 
 ---
 
@@ -60,4 +61,4 @@ This file provides essential context and instructions for AI agents interacting 
 
 ## 6. Additional Notes / Specific Instructions
 
-*   Nothing yet
+*   I'm trying to learn how to use an AI agent in a more efficient way.  Please provide tips and advice on how I might best make use of you.

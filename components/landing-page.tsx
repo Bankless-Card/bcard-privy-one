@@ -2,11 +2,10 @@ import React from 'react';
 import Head from 'next/head';
 import LandingNavbar from './LandingNavbar';
 import BlackFlagSite from './black-flag-site';
-import Vote from './Vote';
 import Footer from './footer';
 import Header from './header';
 
-export default function LandingPage({ markdownContent }: { markdownContent: string }) {
+export default function LandingPage({ mainContent, sidebarContent, hash }: { mainContent: string, sidebarContent: string, hash: string }) {
   return (
     <>
       <Head>
@@ -20,12 +19,21 @@ export default function LandingPage({ markdownContent }: { markdownContent: stri
         <div className="content-container">
           <main className="main-content">
             <LandingNavbar />
-            <BlackFlagSite markdownContent={markdownContent} />
+            
+            <div className="desktop-main-content">
+              <BlackFlagSite markdownContent={mainContent} />
+            </div>
+
+            <div className="mobile-main-content">
+              {hash === 'sidebar'
+                ? <BlackFlagSite markdownContent={sidebarContent} />
+                : <BlackFlagSite markdownContent={mainContent} />
+              }
+            </div>
           </main>
 
-          
           <div className="sidebar">
-            {<Vote onlyActiveProposals={true} />}
+            <BlackFlagSite markdownContent={sidebarContent} />
           </div>
         
         </div>

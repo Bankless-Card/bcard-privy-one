@@ -19,14 +19,38 @@ a.navItem:hover {
 	background: #000;
 }
 
-.navMobile {
-	display: block;
+.homeLink {
+  display: none;
 }
 
+/* Mobile styles */
+@media (max-width: 767px) {
+  .nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background-color: #fff;
+    border-top: 1px solid #000;
+    border-bottom: none;
+    justify-content: space-around;
+    z-index: 1000;
+    margin: 0;
+  }
 
-/* Desktop/tablet styles - centered modal */
-@media (min-width: 768px) {
-	.navMobile {
-		display: none;
-	}
+  .nav > div {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+  }
+
+  .navItem {
+    padding: 1rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .homeLink {
+    display: inline-block;
+  }
 }
