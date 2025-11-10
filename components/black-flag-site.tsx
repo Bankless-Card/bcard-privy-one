@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import BCardIntegration from './bcard-integration';
 import LoginButton from './LoginButton';
+import Vote from './Vote';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 
@@ -11,6 +12,7 @@ const ComponentRegistry = {
   'BCardIntegration': BCardIntegration,
   'FlagEmoji': () => <span className="bf-flag text-4xl">🏴</span>,
   'LoginButton': LoginButton,
+  'Vote' : Vote
   // Add more components as needed
 };
 

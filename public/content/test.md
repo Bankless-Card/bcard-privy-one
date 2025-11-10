@@ -5,3 +5,5 @@ This is just a test page
     Markdown
 
 ` markdown `
+
+{{component:Vote}}
