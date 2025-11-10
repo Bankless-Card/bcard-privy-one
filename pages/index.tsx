@@ -17,13 +17,12 @@ export default function HomePage() {
 	useEffect(() => {
 		const fetchContent = async () => {
 			const hash = window.location.hash.substring(1);
-			const slug = hash ? hash : 'black-flag-content';
-			
+							const slug = hash ? hash : 'home';			
 			try {
 				const response = await fetch(`/content/${slug}.md`);
 				if (!response.ok) {
 					// If the specific file is not found, default to black-flag-content
-					const defaultResponse = await fetch('/content/black-flag-content.md');
+					const defaultResponse = await fetch('/content/home.md');
 					const defaultText = await defaultResponse.text();
 					setMarkdownContent(defaultText);
 					return;
@@ -33,7 +32,7 @@ export default function HomePage() {
 			} catch (error) {
 				console.error('Error fetching markdown content:', error);
 				// Fallback to default content on error
-				const defaultResponse = await fetch('/content/black-flag-content.md');
+				const defaultResponse = await fetch('/content/home.md');
 				const defaultText = await defaultResponse.text();
 				setMarkdownContent(defaultText);
 			}
