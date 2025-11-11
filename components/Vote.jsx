@@ -2,6 +2,7 @@ import styles from './Vote.module.css';
 import SnapshotSendVote from './SnapshotSendVote';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import LoadingSpinner from './LoadingSpinner';
 
 const QUERY_URL = "https://hub.snapshot.org/graphql?query=%0Aquery%20Spaces%20%7B%0A%20%20spaces(%0A%20%20%20%20first%3A%2020%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20about%0A%20%20%20%20network%0A%20%20%20%20symbol%0A%20%20%20%20strategies%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20network%0A%20%20%20%20%20%20params%0A%20%20%20%20%7D%0A%20%20%20%20admins%0A%20%20%20%20moderators%0A%20%20%20%20members%0A%20%20%20%20filters%20%7B%0A%20%20%20%20%20%20minScore%0A%20%20%20%20%20%20onlyMembers%0A%20%20%20%20%7D%0A%20%20%20%20plugins%0A%20%20%7D%0A%7D%0A%0Aquery%20Proposals%20%7B%0A%20%20proposals(%0A%20%20%20%20first%3A%2020%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20space_in%3A%20%5B%22tranmer.eth%22%5D%0A%20%20%20%20%7D%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20title%0A%20%20%20%20body%0A%20%20%20%20choices%0A%20%20%20%20start%0A%20%20%20%20end%0A%20%20%20%20snapshot%0A%20%20%20%20state%0A%20%20%20%20author%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0Aquery%20Votes%20%7B%0A%20%20votes%20(%0A%20%20%20%20first%3A%201000%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20proposal%3A%20%22QmPvbwguLfcVryzBRrbY4Pb9bCtxURagdv1XjhtFLf3wHj%22%0A%20%20%20%20%7D%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0Aquery%20Follows%20%7B%0A%20%20follows%20(where%3A%20%7B%20follower%3A%20%220xeF8305E140ac520225DAf050e2f71d5fBcC543e7%22%20%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20follower%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%20%20created%0A%20%20%7D%0A%7D%0A&operationName=Proposals";
 
@@ -9,6 +10,7 @@ export default function Vote({ onlyActiveProposals=false }) {
 
 	const [votes, setVotes] = useState([]);
 	const [proposals, setProposals] = useState([]);
+	const [hasLoaded, setHasLoaded] = useState(false);
 
 
 	useEffect(() => {
@@ -17,6 +19,7 @@ export default function Vote({ onlyActiveProposals=false }) {
 			let p = await getProposals(onlyActiveProposals);
 			//console.log(p);
 			setProposals(p);
+			setHasLoaded(true);
 		}
 
 		init();
@@ -157,6 +160,10 @@ export default function Vote({ onlyActiveProposals=false }) {
 			console.log(e);
 			return []; // Return empty array on error
 		}
+	}
+
+	if( !hasLoaded ) {
+		return (<LoadingSpinner />);
 	}
 
 	return (
