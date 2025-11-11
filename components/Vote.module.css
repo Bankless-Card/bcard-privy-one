@@ -12,3 +12,9 @@
     font-size: 0.9em;
     width: 100%;
 }
+
+.linkOut {
+    display: block;
+    text-align: center;
+    margin-top: 10px;
+}

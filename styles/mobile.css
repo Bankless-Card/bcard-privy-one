@@ -17,4 +17,10 @@
   .mobile-main-content {
     display: block;
   }
+
+  footer {
+    position: static;
+    padding-bottom: 50px;
+  }
+
 }

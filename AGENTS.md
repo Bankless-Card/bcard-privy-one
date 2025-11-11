@@ -33,7 +33,7 @@ This file provides essential context and instructions for AI agents interacting 
 *   **Naming Conventions:** camelCase for variables, PascalCase for components.
 *   **Architectural Patterns:**
     * The site aims to use markdown for end-user convenience.  Markdown content is stored in `/public/content`.
-    * React components can be included in markdown using `{{component:component_name}}` in markdown (they must registered in `ComponentRegistry` in `/components/black-flag-site.tsx`)
+    * React components can be included in markdown using `{{component:component_name}}` in markdown (they must registered in `ComponentRegistry` in `/components/MarkdownWithReactComponentRenderer.tsx`)
 
 
 

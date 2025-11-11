@@ -1,4 +1,4 @@
-import LandingPage from "../components/landing-page";
+import LandingPage from "../components/LandingPage";
 import { usePrivy } from "@privy-io/react-auth";
 import React, { useEffect, useState } from "react";
 import { useRouter } from 'next/router';
@@ -35,8 +35,8 @@ export default function HomePage() {
 					const text = await response.text();
 					setMainContent(text);
 				} else {
-					// Fallback to home.md if the specific markdown is not found
-					const fallbackResponse = await fetch('/content/home.md');
+					// Fallback to about.md if the specific markdown is not found
+					const fallbackResponse = await fetch('/content/about.md');
 					const text = await fallbackResponse.text();
 					setMainContent(text);
 				}

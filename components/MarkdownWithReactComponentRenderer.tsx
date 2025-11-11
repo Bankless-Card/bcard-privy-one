@@ -110,7 +110,7 @@ function BlackFlagContent({ markdownContent }: { markdownContent: string }) {
   );
 }
 
-export default function BlackFlagSite({ markdownContent = '' }: { markdownContent?: string }) {
+export default function MarkdownWithReactComponentRenderer({ markdownContent = '' }: { markdownContent?: string }) {
   return (
     <BlackFlagContent markdownContent={markdownContent} />
   );

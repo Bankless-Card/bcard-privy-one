@@ -1,7 +1,7 @@
 import { GetStaticProps, GetStaticPaths } from 'next';
 import fs from 'fs';
 import path from 'path';
-import BlackFlagSite from '../../components/black-flag-site';
+import MarkdownWithReactComponentRenderer from '../../components/MarkdownWithReactComponentRenderer';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -37,7 +37,7 @@ export default function ContentPage({ initialMarkdownContent, initialTitle }: Co
       </Head>
       <div className="bf-theme">
         <div className="bf-container py-10">
-          <BlackFlagSite markdownContent={markdownContent} />
+          <MarkdownWithReactComponentRenderer markdownContent={markdownContent} />
         </div>
       </div>
     </>

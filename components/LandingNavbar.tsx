@@ -8,7 +8,7 @@ export default function LandingNavbar() {
         <Link href="/#sidebar" className={`${styles.navItem} ${styles.homeLink}`}>
           Home
         </Link>
-        <Link href="/#home" className={styles.navItem}>
+        <Link href="/#about" className={styles.navItem}>
           About
         </Link>
         { /* }
@@ -19,7 +19,7 @@ export default function LandingNavbar() {
           Chatter
         </Link>
         { */ }
-        <Link href="/#test" className={styles.navItem}>
+        <Link href="/#vote" className={styles.navItem}>
           Vote
         </Link>
       </div>

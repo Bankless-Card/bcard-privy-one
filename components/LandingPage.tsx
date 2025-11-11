@@ -1,9 +1,9 @@
 import React from 'react';
 import Head from 'next/head';
 import LandingNavbar from './LandingNavbar';
-import BlackFlagSite from './black-flag-site';
-import Footer from './footer';
-import Header from './header';
+import MarkdownWithReactComponentRenderer from './MarkdownWithReactComponentRenderer';
+import Footer from './Footer';
+import Header from './Header';
 
 export default function LandingPage({ mainContent, sidebarContent, hash }: { mainContent: string, sidebarContent: string, hash: string }) {
   return (
@@ -21,19 +21,19 @@ export default function LandingPage({ mainContent, sidebarContent, hash }: { mai
             <LandingNavbar />
             
             <div className="desktop-main-content">
-              <BlackFlagSite markdownContent={mainContent} />
+              <MarkdownWithReactComponentRenderer markdownContent={mainContent} />
             </div>
 
             <div className="mobile-main-content">
               {hash === 'sidebar'
-                ? <BlackFlagSite markdownContent={sidebarContent} />
-                : <BlackFlagSite markdownContent={mainContent} />
+                ? <MarkdownWithReactComponentRenderer markdownContent={sidebarContent} />
+                : <MarkdownWithReactComponentRenderer markdownContent={mainContent} />
               }
             </div>
           </main>
 
           <div className="sidebar">
-            <BlackFlagSite markdownContent={sidebarContent} />
+            <MarkdownWithReactComponentRenderer markdownContent={sidebarContent} />
           </div>
         
         </div>
