@@ -1,14 +1,14 @@
 import Link from 'next/link';
 import styles from './LandingNavbar.module.css';
 
-export default function LandingNavbar() {
+export default function LandingNavbar({ hash }: { hash: string }) {
   return (
     <nav className={styles.nav}>
       <div>
-        <Link href="/#sidebar" className={`${styles.navItem} ${styles.homeLink}`}>
+        <Link href="/#sidebar" className={`${styles.navItem} ${styles.homeLink} ${hash === 'sidebar' ? styles.active : ''}`}>
           Home
         </Link>
-        <Link href="/#about" className={styles.navItem}>
+        <Link href="/#home" className={`${styles.navItem} ${hash === 'home' ? styles.active : ''}`}>
           About
         </Link>
         { /* }
@@ -19,7 +19,7 @@ export default function LandingNavbar() {
           Chatter
         </Link>
         { */ }
-        <Link href="/#vote" className={styles.navItem}>
+        <Link href="/#test" className={`${styles.navItem} ${hash === 'test' ? styles.active : ''}`}>
           Vote
         </Link>
       </div>

@@ -61,4 +61,5 @@ This file provides essential context and instructions for AI agents interacting 
 
 ## 6. Additional Notes / Specific Instructions
 
-*   I'm trying to learn how to use an AI agent in a more efficient way.  Please provide tips and advice on how I might best make use of you.
+* I'm trying to learn how to use an AI agent in a more efficient way.  Please provide tips and advice on how I might best make use of you.
+* There is no need to run the development server after making changes - I will do that myself.

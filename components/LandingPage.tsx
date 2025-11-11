@@ -18,7 +18,7 @@ export default function LandingPage({ mainContent, sidebarContent, hash }: { mai
         
         <div className="content-container">
           <main className="main-content">
-            <LandingNavbar />
+            <LandingNavbar hash={hash} />
             
             <div className="desktop-main-content">
               <MarkdownWithReactComponentRenderer markdownContent={mainContent} />

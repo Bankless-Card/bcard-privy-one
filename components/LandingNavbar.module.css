@@ -14,9 +14,18 @@
   display: inline-block;
 }
 
-a.navItem:hover {
+a.navItem:hover,
+.active:link,
+.active:hover,
+.active:active,
+.active:visited
+ {
 	color: #57BCF2;
 	background: #000;
+}
+
+.active {
+  text-decoration: underline;
 }
 
 .homeLink {
