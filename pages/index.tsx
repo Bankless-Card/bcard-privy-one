@@ -26,7 +26,7 @@ export default function HomePage() {
 
 	useEffect(() => {
 		const handleHashChange = async (url: string) => {
-			const currentHash = url.split('#')[1] || 'home';
+			const currentHash = url.split('#')[1] || 'about';
 			setHash(currentHash);
 
 			try {

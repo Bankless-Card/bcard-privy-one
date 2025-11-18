@@ -8,7 +8,7 @@ export default function LandingNavbar({ hash }: { hash: string }) {
         <Link href="/#sidebar" className={`${styles.navItem} ${styles.homeLink} ${hash === 'sidebar' ? styles.active : ''}`}>
           Home
         </Link>
-        <Link href="/#home" className={`${styles.navItem} ${hash === 'home' ? styles.active : ''}`}>
+        <Link href="/#about" className={`${styles.navItem} ${hash === 'about' ? styles.active : ''}`}>
           About
         </Link>
         { /* }
@@ -19,7 +19,7 @@ export default function LandingNavbar({ hash }: { hash: string }) {
           Chatter
         </Link>
         { */ }
-        <Link href="/#test" className={`${styles.navItem} ${hash === 'test' ? styles.active : ''}`}>
+        <Link href="/#vote" className={`${styles.navItem} ${hash === 'vote' ? styles.active : ''}`}>
           Vote
         </Link>
       </div>
