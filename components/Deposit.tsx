@@ -2,7 +2,9 @@ import { usePrivy, useWallets } from '@privy-io/react-auth';
 import React, { useEffect, useState } from 'react';
 import { Contract, formatUnits, BrowserProvider } from 'ethers';
 
+import styles from './Deposit.module.css';
 import Withdraw from './Withdraw';
+import Button from './Button';
 
 
 export default function Deposit() {
@@ -102,7 +104,7 @@ export default function Deposit() {
 		);
 	}
 
-	async function handleDeposit(depositAmount?: number) {
+	async function handleDepositInternal(depositAmount?: number) {
 		setDepositLoading(true);
 		setDepositError(null);
 		setDepositSuccess(false);
@@ -309,12 +311,34 @@ export default function Deposit() {
 						setApprovalLoading(false);
 						throw new Error('USDC approve method not available');
 					}
-				} catch (approveErr) {
+				} catch (approveErr: any) {
 					console.error('Approval error:', approveErr);
 					setApprovalLoading(false);
 					setCountdown(0);
-					setDepositStatus('Approval failed. Please check your wallet and try again.');
-					throw approveErr;
+					
+					// Handle specific error messages
+					let errorMsg = 'Approval failed. Please check your wallet and try again.';
+					if (approveErr) {
+						if (typeof approveErr === 'string') {
+							errorMsg = approveErr;
+						} else if (approveErr.message) {
+							errorMsg = approveErr.message;
+						} else if (approveErr.reason) {
+							errorMsg = approveErr.reason;
+						}
+						
+						// Handle insufficient funds errors
+						if (errorMsg.includes('insufficient funds for gas') || 
+							errorMsg.includes('insufficient funds for intrinsic transaction cost') || 
+							errorMsg.includes('insufficient funds')) {
+							errorMsg = 'Your wallet does not have enough ETH on Base to pay for gas. Please fund your wallet and try again.';
+						}
+					}
+					
+					setDepositStatus(errorMsg);
+					setDepositError(errorMsg);
+					setDepositLoading(false);
+					return; // Exit gracefully instead of throwing
 				}
 				setApprovalLoading(false);
 				setCountdown(0);
@@ -557,11 +581,33 @@ export default function Deposit() {
 							setDepositStatus(null);
 						}, 5000);
 					}
-				} catch (depositErr) {
+				} catch (depositErr: any) {
 					console.error('Deposit transaction error:', depositErr);
 					setCountdown(0);
-					setDepositStatus('Deposit transaction failed or rejected.');
-					throw depositErr;
+					
+					// Handle specific error messages
+					let errorMsg = 'Deposit transaction failed or rejected.';
+					if (depositErr) {
+						if (typeof depositErr === 'string') {
+							errorMsg = depositErr;
+						} else if (depositErr.message) {
+							errorMsg = depositErr.message;
+						} else if (depositErr.reason) {
+							errorMsg = depositErr.reason;
+						}
+						
+						// Handle insufficient funds errors
+						if (errorMsg.includes('insufficient funds for gas') || 
+							errorMsg.includes('insufficient funds for intrinsic transaction cost') || 
+							errorMsg.includes('insufficient funds')) {
+							errorMsg = 'Your wallet does not have enough ETH on Base to pay for gas. Please fund your wallet and try again.';
+						}
+					}
+					
+					setDepositStatus(errorMsg);
+					setDepositError(errorMsg);
+					setDepositLoading(false);
+					return; // Exit gracefully instead of throwing
 				}
 			} else {
 				throw new Error('Vault deposit method not available');
@@ -608,10 +654,54 @@ export default function Deposit() {
 		}
 	}
 
+	// Wrapper function to ensure no errors escape to React's error boundary
+	async function handleDeposit(depositAmount?: number) {
+		try {
+			await handleDepositInternal(depositAmount);
+		} catch (error: any) {
+			// This should never happen since handleDepositInternal handles all errors,
+			// but this is a safety net to prevent unhandled runtime errors
+			console.error('Unexpected error escaped from handleDepositInternal:', error);
+			
+			let errorMsg = 'An unexpected error occurred. Please try again.';
+			if (error?.message?.includes('insufficient funds')) {
+				errorMsg = 'Your wallet does not have enough ETH on Base to pay for gas. Please fund your wallet and try again.';
+			}
+			
+			setDepositError(errorMsg);
+			setDepositStatus(errorMsg);
+			setDepositLoading(false);
+			setApprovalLoading(false);
+			setCountdown(0);
+		}
+	}
+
+
 	return (
-		<div style={{ display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
-			<p><strong>Interact with USDC Vault</strong></p>
-			<div>Your ETH balance on Base: {ethBalance === null ? 'Loading...' : ethBalance.toFixed(8)}</div>
+		<div className="vaultWidget">
+			<div className={`${styles.balances} balances`}>
+				<strong>You have...</strong>
+				<div className={`${styles.tokenBalance} tokenBalance`}>{vaultBalance === null ? 'Loading...' : `$${vaultBalance.toFixed(2)}`} deposited</div>
+				<div className={`${styles.tokenBalance} tokenBalance`}>{usdcBalance === null ? 'Loading...' : `$${usdcBalance.toFixed(2)}`} available</div>
+			</div>
+
+			<div className={`${styles.vaultButtons} vaultButtons`}>
+				{usdcBalance !== null && usdcBalance > 0 && (
+					<>
+					<Button buttonText="Deposit $1" secondary={true} buttonFunction={() => handleDeposit(1)} enabled={!depositLoading && !approvalLoading} />
+					<Button buttonText="Withdraw $1" secondary={true} />
+					</>
+				)}
+			</div>
+		</div>
+	)
+
+
+
+	return (
+		<div style={{ display: 'flex', flexDirection: 'column' }}>
+			{/*<div>Your ETH balance on Base: {ethBalance === null ? 'Loading...' : ethBalance.toFixed(8)}</div>*/}
+			
 			<div>Your USDC balance on Base: {usdcBalance === null ? 'Loading...' : `$${usdcBalance.toFixed(2)}`}</div>
 			{/* <div>Your Vault balance: {vaultBalance === null ? 'Loading...' : `$${vaultBalance.toFixed(2)}`}</div> */}
 			
