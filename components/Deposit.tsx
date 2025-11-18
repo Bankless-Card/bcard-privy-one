@@ -104,551 +104,276 @@ export default function Deposit() {
 		);
 	}
 
+	async function handleApproval(
+		usdcErc20Contract: Contract,
+		vaultAddress: string,
+		userAddress: string,
+		amount: bigint,
+		countdownIntervalSetter: (interval: NodeJS.Timeout) => void
+	) {
+		setApprovalLoading(true);
+		setDepositStatus('Requesting approval from wallet...');
+		console.log('USDC allowance insufficient, approving...', {
+			currentAllowance: (await usdcErc20Contract.allowance(userAddress, vaultAddress)).toString(),
+			requiredAmount: amount.toString(),
+		});
+
+		try {
+			if (typeof usdcErc20Contract.approve !== 'function') {
+				throw new Error('USDC approve method not available');
+			}
+
+			console.log('About to call usdcErc20Contract.approve...');
+			setCountdown(30);
+			setCountdownMax(30);
+			const countdownInterval = setInterval(() => {
+				setCountdown(prev => Math.max(0, prev - 1));
+			}, 1000);
+			countdownIntervalSetter(countdownInterval);
+
+			const approvePromise = usdcErc20Contract.approve(vaultAddress, amount);
+			const timeoutPromise = new Promise((_, reject) => {
+				setTimeout(() => reject(new Error('APPROVE_CALL_TIMEOUT')), 30000);
+			});
+
+			let approvalCheckInterval: NodeJS.Timeout | null = null;
+			let approveTx;
+
+			try {
+				const startPeriodicAllowanceCheck = () => {
+					approvalCheckInterval = setInterval(async () => {
+						if (typeof usdcErc20Contract.allowance === 'function') {
+							try {
+								const currentAllowance = await usdcErc20Contract.allowance(userAddress, vaultAddress);
+								if (currentAllowance >= amount) {
+									if (approvalCheckInterval) clearInterval(approvalCheckInterval);
+									clearInterval(countdownInterval);
+									setCountdown(0);
+									setApprovalSuccess(true);
+									setDepositStatus('Approval confirmed! Proceeding to deposit...');
+									setApprovalLoading(false);
+								}
+							} catch (checkErr) {
+								console.log('🔍 Allowance check error (will retry):', checkErr);
+							}
+						}
+					}, 5000);
+				};
+				startPeriodicAllowanceCheck();
+
+				approveTx = await Promise.race([approvePromise, timeoutPromise]);
+
+				if (approvalCheckInterval) clearInterval(approvalCheckInterval);
+				clearInterval(countdownInterval);
+				setCountdown(0);
+
+			} catch (timeoutErr: any) {
+				if (approvalCheckInterval) clearInterval(approvalCheckInterval);
+				clearInterval(countdownInterval);
+				setCountdown(0);
+
+				if (timeoutErr.message === 'APPROVE_CALL_TIMEOUT') {
+					console.warn('🟡 Approve call timed out, but transaction may still be pending. Checking allowance again...');
+					await new Promise(resolve => setTimeout(resolve, 3000));
+					const newAllowance = await usdcErc20Contract.allowance(userAddress, vaultAddress);
+					if (newAllowance >= amount) {
+						setApprovalSuccess(true);
+						setDepositStatus('Approval confirmed! Proceeding to deposit...');
+						setApprovalLoading(false);
+						approveTx = null;
+					} else {
+						throw new Error('Approval transaction call timed out. Please try again or check your wallet.');
+					}
+				} else {
+					throw timeoutErr;
+				}
+			}
+
+			if (approveTx) {
+				setDepositStatus(`Approval transaction sent. Waiting for confirmation...\nView on BaseScan: https://basescan.org/tx/${approveTx.hash}`);
+				const receipt = await approveTx.wait();
+				if (receipt.status === 0) throw new Error('Approval transaction failed.');
+				setApprovalSuccess(true);
+				setDepositStatus('Approval confirmed! Proceeding to deposit...');
+			}
+			return true;
+		} catch (err: any) {
+			console.error('Approval error:', err);
+			let errorMsg = 'Approval failed. Please check your wallet and try again.';
+			if (err.reason) errorMsg = err.reason;
+			else if (err.message) errorMsg = err.message;
+			if (errorMsg.includes('insufficient funds')) {
+				errorMsg = 'Your wallet does not have enough ETH on Base to pay for gas. Please fund your wallet and try again.';
+			}
+			setDepositStatus(errorMsg);
+			setDepositError(errorMsg);
+			return false;
+		} finally {
+			setApprovalLoading(false);
+			setCountdown(0);
+		}
+	}
+
+	async function executeDeposit(
+		vaultContract: Contract,
+		usdcContract: Contract,
+		provider: BrowserProvider,
+		userAddress: string,
+		amount: bigint,
+		countdownIntervalSetter: (interval: NodeJS.Timeout) => void
+	) {
+		setDepositStatus('Sending deposit transaction...');
+		try {
+			if (typeof vaultContract.deposit !== 'function') {
+				throw new Error('Vault deposit method not available');
+			}
+
+			setCountdown(30);
+			setCountdownMax(30);
+			const depositCountdownInterval = setInterval(() => {
+				setCountdown(prev => Math.max(0, prev - 1));
+			}, 1000);
+			countdownIntervalSetter(depositCountdownInterval);
+
+			const depositPromise = vaultContract.deposit(amount, userAddress);
+			const timeoutPromise = new Promise((_, reject) => {
+				setTimeout(() => reject(new Error('DEPOSIT_CALL_TIMEOUT')), 30000);
+			});
+
+			let balanceCheckInterval: NodeJS.Timeout | null = null;
+			let depositTx;
+
+			const initialVaultBalance = await vaultContract.balanceOf(userAddress);
+
+			try {
+				const startPeriodicBalanceCheck = () => {
+					balanceCheckInterval = setInterval(async () => {
+						const currentVaultBalance = await vaultContract.balanceOf(userAddress);
+						if (currentVaultBalance > initialVaultBalance) {
+							if (balanceCheckInterval) clearInterval(balanceCheckInterval);
+							clearInterval(depositCountdownInterval);
+							setCountdown(0);
+							setDepositSuccess(true);
+							setDepositStatus('Deposit successful!');
+							const newUsdcBalance = await usdcContract.balanceOf(userAddress);
+							setUsdcBalance(Number(formatUnits(newUsdcBalance, 6)));
+							setVaultBalance(Number(formatUnits(currentVaultBalance, 6)));
+							setTimeout(() => setDepositStatus(null), 5000);
+						}
+					}, 5000);
+				};
+				startPeriodicBalanceCheck();
+
+				depositTx = await Promise.race([depositPromise, timeoutPromise]);
+
+				if (balanceCheckInterval) clearInterval(balanceCheckInterval);
+				clearInterval(depositCountdownInterval);
+				setCountdown(0);
+
+			} catch (timeoutErr: any) {
+				if (balanceCheckInterval) clearInterval(balanceCheckInterval);
+				clearInterval(depositCountdownInterval);
+				setCountdown(0);
+
+				if (timeoutErr.message === 'DEPOSIT_CALL_TIMEOUT') {
+					await new Promise(resolve => setTimeout(resolve, 5000));
+					const newVaultBalance = await vaultContract.balanceOf(userAddress);
+					if (newVaultBalance > initialVaultBalance) {
+						setDepositSuccess(true);
+						setDepositStatus('Deposit successful!');
+						const newUsdcBalance = await usdcContract.balanceOf(userAddress);
+						setUsdcBalance(Number(formatUnits(newUsdcBalance, 6)));
+						setVaultBalance(Number(formatUnits(newVaultBalance, 6)));
+						setTimeout(() => setDepositStatus(null), 5000);
+						depositTx = null;
+					} else {
+						throw new Error('Deposit transaction timed out. Please check your wallet or BaseScan.');
+					}
+				} else {
+					throw timeoutErr;
+				}
+			}
+
+			if (depositTx) {
+				setDepositStatus(`Deposit transaction sent. Waiting for confirmation...\nView on BaseScan: https://basescan.org/tx/${depositTx.hash}`);
+				const receipt = await depositTx.wait();
+				if (receipt.status === 0) throw new Error('Deposit transaction failed');
+				setDepositSuccess(true);
+				setDepositStatus('Deposit successful!');
+				const newVaultBalance = await vaultContract.balanceOf(userAddress);
+				const newUsdcBalance = await usdcContract.balanceOf(userAddress);
+				setVaultBalance(Number(formatUnits(newVaultBalance, 6)));
+				setUsdcBalance(Number(formatUnits(newUsdcBalance, 6)));
+				setTimeout(() => setDepositStatus(null), 5000);
+			}
+			return true;
+		} catch (err: any) {
+			console.error('Deposit error:', err);
+			let errorMsg = 'Deposit failed. Please check your wallet and try again.';
+			if (err.reason) errorMsg = err.reason;
+			else if (err.message) errorMsg = err.message;
+			if (errorMsg.includes('insufficient funds')) {
+				errorMsg = 'Your wallet does not have enough ETH on Base to pay for gas. Please fund your wallet and try again.';
+			}
+			setDepositStatus(errorMsg);
+			setDepositError(errorMsg);
+			return false;
+		}
+	}
+
 	async function handleDepositInternal(depositAmount?: number) {
 		setDepositLoading(true);
 		setDepositError(null);
 		setDepositSuccess(false);
 		setDepositStatus('Depositing...');
 		setCountdown(0);
+		let countdownInterval: NodeJS.Timeout | null = null;
+		const countdownIntervalSetter = (interval: NodeJS.Timeout) => {
+			countdownInterval = interval;
+		};
+
 		try {
-			const wallet = wallets && wallets.length > 0 ? wallets[0] : null;
+			const wallet = wallets?.[0];
 			if (!wallet) throw new Error('No wallet found');
-			const privyProvider = await wallet.getEthereumProvider();
-			const provider = new BrowserProvider(privyProvider);
+
+			const provider = new BrowserProvider(await wallet.getEthereumProvider());
 			const signer = await provider.getSigner();
 			const address = await signer.getAddress();
-			const vault = new Contract(VAULT_ADDRESS, VAULT_ABI, signer);
-			// Use provided amount or default to full balance
-			const amountToDeposit = depositAmount !== undefined ? depositAmount : usdcBalance!;
-			const amount = BigInt(Math.floor(amountToDeposit * 1e6)); // USDC has 6 decimals
 
-			// Log deposit inputs
-			console.log('Deposit input audit:', {
-				walletAddress: address,
-				depositAmount: amount.toString(),
-				usdcBalance,
-				ethBalance,
-				vaultAddress: VAULT_ADDRESS
-			});
-
-			// Check USDC allowance and approve if needed
 			const usdcERC20 = new Contract(USDC_ADDRESS, [
 				"function allowance(address owner, address spender) view returns (uint256)",
-				"function approve(address spender, uint256 amount) returns (bool)"
+				"function approve(address spender, uint256 amount) returns (bool)",
+				"function balanceOf(address owner) view returns (uint256)"
 			], signer);
-			let allowance = BigInt(0);
-			if (typeof usdcERC20.allowance === 'function') {
-				allowance = await usdcERC20.allowance(address, VAULT_ADDRESS);
-				console.log('USDC allowance for vault:', allowance.toString());
-			}
+			const vault = new Contract(VAULT_ADDRESS, VAULT_ABI, signer);
+
+			const amountToDeposit = depositAmount !== undefined ? depositAmount : usdcBalance!;
+			const amount = BigInt(Math.floor(amountToDeposit * 1e6));
+
+			const allowance = await usdcERC20.allowance(address, VAULT_ADDRESS);
 			if (allowance < amount) {
-				setApprovalLoading(true);
-				setDepositStatus('Requesting approval from wallet...');
-				console.log('USDC allowance insufficient, approving...', {
-					currentAllowance: allowance.toString(),
-					requiredAmount: amount.toString()
-				});
-				try {
-					if (typeof usdcERC20.approve === 'function') {
-						console.log('About to call usdcERC20.approve...');
-						
-						// Start countdown for approval
-						setCountdown(30);
-						setCountdownMax(30);
-						const countdownInterval = setInterval(() => {
-							setCountdown(prev => Math.max(0, prev - 1));
-						}, 1000);
-						
-						// Wrap approve call in a timeout Promise race
-						const approvePromise = usdcERC20.approve(VAULT_ADDRESS, amount);
-						const timeoutPromise = new Promise((_, reject) => {
-							setTimeout(() => reject(new Error('APPROVE_CALL_TIMEOUT')), 30000); // 30 second timeout
-						});
-						
-						// Declare interval outside try block so it's accessible in catch
-						let approvalCheckInterval: NodeJS.Timeout | null = null;
-						let approveTx;
-						
-						try {
-							// Start periodic allowance checks every 5 seconds
-							const startPeriodicAllowanceCheck = () => {
-								approvalCheckInterval = setInterval(async () => {
-									if (typeof usdcERC20.allowance === 'function') {
-										try {
-											const currentAllowance = await usdcERC20.allowance(address, VAULT_ADDRESS);
-											console.log('🔍 Periodic allowance check:', currentAllowance.toString(), 'Required:', amount.toString());
-											
-											if (currentAllowance >= amount) {
-												console.log('✅ Approval detected via periodic check!');
-												if (approvalCheckInterval) clearInterval(approvalCheckInterval);
-												clearInterval(countdownInterval);
-												setCountdown(0);
-												
-												setApprovalSuccess(true);
-												setDepositStatus('Approval confirmed! Proceeding to deposit...');
-												setApprovalLoading(false);
-											}
-										} catch (checkErr) {
-											console.log('🔍 Allowance check error (will retry):', checkErr);
-										}
-									}
-								}, 5000); // Check every 5 seconds
-							};
-							
-							// Start periodic checks
-							startPeriodicAllowanceCheck();
-							
-							approveTx = await Promise.race([approvePromise, timeoutPromise]);
-							
-							// If we got here, the promise resolved, so stop periodic checks
-							if (approvalCheckInterval) clearInterval(approvalCheckInterval);
-							
-							clearInterval(countdownInterval);
-							setCountdown(0);
-							console.log('Approve tx returned:', approveTx);
-							console.log('Approve tx hash:', approveTx?.hash);
-						} catch (timeoutErr: any) {
-							// Clean up intervals
-							if (approvalCheckInterval) clearInterval(approvalCheckInterval);
-							clearInterval(countdownInterval);
-							setCountdown(0);
-							
-							if (timeoutErr.message === 'APPROVE_CALL_TIMEOUT') {
-								console.warn('🟡 Approve call timed out, but transaction may still be pending. Checking allowance again...');
-								// Wait a bit and check allowance again
-								setCountdown(3);
-								setCountdownMax(3);
-								await new Promise(resolve => setTimeout(resolve, 3000));
-								setCountdown(0);
-								if (typeof usdcERC20.allowance === 'function') {
-									const newAllowance = await usdcERC20.allowance(address, VAULT_ADDRESS);
-									console.log('New allowance after timeout:', newAllowance.toString());
-									if (newAllowance >= amount) {
-										console.log('Approval succeeded despite timeout!');
-										setApprovalSuccess(true);
-										setDepositStatus('Approval confirmed! Proceeding to deposit...');
-										setApprovalLoading(false);
-										// Skip the rest of approval flow
-										approveTx = null;
-									} else {
-										throw new Error('Approval transaction call timed out. Please try again or check your wallet.');
-									}
-								} else {
-									throw new Error('Cannot verify approval status. Please try again.');
-								}
-							} else {
-								throw timeoutErr;
-							}
-						}
-						
-						if (approveTx) {
-							// Log detailed approval transaction metadata
-							console.log('✅ Approval Transaction Sent:', {
-								hash: approveTx.hash,
-								from: approveTx.from,
-								to: approveTx.to,
-								value: approveTx.value?.toString(),
-								gasLimit: approveTx.gasLimit?.toString(),
-								gasPrice: approveTx.gasPrice?.toString(),
-								maxFeePerGas: approveTx.maxFeePerGas?.toString(),
-								maxPriorityFeePerGas: approveTx.maxPriorityFeePerGas?.toString(),
-								nonce: approveTx.nonce,
-								chainId: approveTx.chainId,
-								type: approveTx.type,
-								data: approveTx.data
-							});
-							
-							// Show BaseScan link as plain string if available
-							if (approveTx.hash) {
-								const statusMsg = `Approval transaction sent!\nView on BaseScan: https://basescan.org/tx/${approveTx.hash}\n\nWaiting for confirmation...`;
-								setDepositStatus(statusMsg);
-								console.log('Approval status updated with BaseScan link');
-							} else {
-								setDepositStatus('Approval transaction sent. Waiting for confirmation...');
-								console.log('Approval status updated (no hash)');
-							}
-							
-							// Add a timeout in case the tx is stuck
-							const approvalTimeout = setTimeout(() => {
-								console.log('Approval timeout reached (2 minutes)');
-								setApprovalLoading(false);
-								setDepositStatus('Approval taking longer than expected. Please check your wallet or block explorer.');
-							}, 120000); // 2 minutes
-							
-							try {
-								console.log('⏳ Waiting for approval tx confirmation...');
-								const receipt = await approveTx.wait();
-								
-								// Log detailed approval receipt metadata
-								console.log('✅ Approval Transaction Confirmed:', {
-									transactionHash: receipt.hash,
-									blockNumber: receipt.blockNumber,
-									blockHash: receipt.blockHash,
-									from: receipt.from,
-									to: receipt.to,
-									gasUsed: receipt.gasUsed?.toString(),
-									cumulativeGasUsed: receipt.cumulativeGasUsed?.toString(),
-									effectiveGasPrice: receipt.gasPrice?.toString(),
-									status: receipt.status,
-									logsBloom: receipt.logsBloom,
-									events: receipt.logs?.length || 0,
-									confirmations: await receipt.confirmations()
-								});
-								
-								clearTimeout(approvalTimeout);
-								setApprovalSuccess(true);
-								setDepositStatus('Approval confirmed! Proceeding to deposit...');
-								console.log('Approval status set to confirmed');
-							} catch (waitErr) {
-								console.error('Approval wait error:', waitErr);
-								clearTimeout(approvalTimeout);
-								setDepositStatus('Approval failed or rejected. Please try again.');
-								setApprovalLoading(false);
-								throw waitErr;
-							}
-						}
-					} else {
-						setApprovalLoading(false);
-						throw new Error('USDC approve method not available');
-					}
-				} catch (approveErr: any) {
-					console.error('Approval error:', approveErr);
-					setApprovalLoading(false);
-					setCountdown(0);
-					
-					// Handle specific error messages
-					let errorMsg = 'Approval failed. Please check your wallet and try again.';
-					if (approveErr) {
-						if (typeof approveErr === 'string') {
-							errorMsg = approveErr;
-						} else if (approveErr.message) {
-							errorMsg = approveErr.message;
-						} else if (approveErr.reason) {
-							errorMsg = approveErr.reason;
-						}
-						
-						// Handle insufficient funds errors
-						if (errorMsg.includes('insufficient funds for gas') || 
-							errorMsg.includes('insufficient funds for intrinsic transaction cost') || 
-							errorMsg.includes('insufficient funds')) {
-							errorMsg = 'Your wallet does not have enough ETH on Base to pay for gas. Please fund your wallet and try again.';
-						}
-					}
-					
-					setDepositStatus(errorMsg);
-					setDepositError(errorMsg);
-					setDepositLoading(false);
-					return; // Exit gracefully instead of throwing
-				}
-				setApprovalLoading(false);
-				setCountdown(0);
-				console.log('Approval loading set to false');
+				const approvalSuccess = await handleApproval(usdcERC20, VAULT_ADDRESS, address, amount, countdownIntervalSetter);
+				if (!approvalSuccess) return;
 			} else {
-				setApprovalSuccess(false);
 				setDepositStatus('USDC allowance sufficient, proceeding to deposit...');
-				console.log('USDC allowance sufficient, skipping approval');
 			}
 
-			// Call deposit(_assets, _receiver)
-			setDepositStatus('Sending deposit transaction...');
-			console.log('🔵 Calling vault.deposit with:', { amount: amount.toString(), receiver: address });
-			if (typeof vault.deposit === 'function') {
-				try {
-					console.log('🔵 About to call vault.deposit...');
-					console.log('🔵 Vault contract address:', VAULT_ADDRESS);
-					console.log('🔵 Deposit method exists:', typeof vault.deposit);
-					
-					// Start countdown for deposit
-					setCountdown(30);
-					setCountdownMax(30);
-					const depositCountdownInterval = setInterval(() => {
-						setCountdown(prev => Math.max(0, prev - 1));
-					}, 1000);
-					
-					// Wrap deposit call in a timeout Promise race
-					console.log('🔵 Creating deposit promise...');
-					const depositPromise = vault.deposit(amount, address);
-					console.log('🔵 Deposit promise created:', depositPromise);
-					console.log('🔵 Is it a Promise?', depositPromise instanceof Promise);
+			const depositSuccess = await executeDeposit(vault, usdcERC20, provider, address, amount, countdownIntervalSetter);
+			if (!depositSuccess) return;
 
-					const depositTimeoutPromise = new Promise((_, reject) => {
-						setTimeout(() => reject(new Error('DEPOSIT_CALL_TIMEOUT')), 30000); // 30 second timeout
-					});
-					
-					// Declare interval outside try block so it's accessible in catch
-					let balanceCheckInterval: NodeJS.Timeout | null = null;
-					let depositTx;
-					
-					try {
-						console.log('🔵 Starting Promise.race for deposit...');
-						
-						// Start periodic balance checks every 5 seconds
-						const startPeriodicBalanceCheck = () => {
-							balanceCheckInterval = setInterval(async () => {
-								if (typeof vault.balanceOf === 'function') {
-									try {
-										const currentVaultBalance = await vault.balanceOf(address);
-										const currentVaultBalanceNum = Number(formatUnits(currentVaultBalance, 6));
-										console.log('🔍 Periodic balance check:', currentVaultBalanceNum, 'Previous:', vaultBalance);
-										
-										if (currentVaultBalanceNum > (vaultBalance || 0)) {
-											console.log('✅ Deposit detected via periodic check!');
-											
-											if (balanceCheckInterval) clearInterval(balanceCheckInterval);
-											clearInterval(depositCountdownInterval);
-											setCountdown(0);
-											
-											// Update balances
-											setVaultBalance(currentVaultBalanceNum);
-											const usdc = new Contract(USDC_ADDRESS, USDC_ABI, provider);
-											if (typeof usdc.balanceOf === 'function') {
-												const balance = await usdc.balanceOf(address);
-												const newUsdcBalance = Number(formatUnits(balance, 6));
-												console.log('Updated USDC balance:', newUsdcBalance);
-												setUsdcBalance(newUsdcBalance);
-											}
-											
-											setDepositSuccess(true);
-											setDepositStatus('Deposit successful!');
-											setDepositLoading(false);
-											
-											setTimeout(() => {
-												setDepositStatus(null);
-											}, 5000);
-										}
-									} catch (checkErr) {
-										console.log('🔍 Balance check error (will retry):', checkErr);
-									}
-								}
-							}, 5000); // Check every 5 seconds
-						};
-						
-						// Start periodic checks
-						startPeriodicBalanceCheck();
-						
-						depositTx = await Promise.race([depositPromise, depositTimeoutPromise]);
-						
-						// If we got here, the promise resolved, so stop periodic checks
-						if (balanceCheckInterval) clearInterval(balanceCheckInterval);
-						
-						console.log('🔵 Promise.race resolved!');
-						clearInterval(depositCountdownInterval);
-						setCountdown(0);
-						console.log('🔵 Deposit tx returned:', depositTx);
-						console.log('🔵 Deposit tx hash:', depositTx?.hash);
-						console.log('🔵 Deposit tx type:', typeof depositTx);
-					} catch (timeoutErr: any) {
-						console.log('🔴 Promise.race caught an error');
-						console.log('🔴 Error type:', typeof timeoutErr);
-						console.log('🔴 Error message:', timeoutErr?.message);
-						console.log('🔴 Full error:', timeoutErr);
-						
-						// Clean up intervals
-						if (balanceCheckInterval) clearInterval(balanceCheckInterval);
-						clearInterval(depositCountdownInterval);
-						setCountdown(0);
-						
-						// Check if this is a contract revert (not a timeout)
-						if (timeoutErr.message !== 'DEPOSIT_CALL_TIMEOUT') {
-							console.error('🔴 Deposit call failed with error (not timeout):', timeoutErr);
-							let errorMsg = 'Deposit transaction failed';
-							if (timeoutErr.reason) {
-								errorMsg = `Deposit failed: ${timeoutErr.reason}`;
-							} else if (timeoutErr.message) {
-								errorMsg = `Deposit failed: ${timeoutErr.message}`;
-							}
-							setDepositStatus(errorMsg);
-							setDepositLoading(false);
-							setCountdown(0);
-							throw timeoutErr;
-						}
-						
-						// Handle timeout case
-						if (timeoutErr.message === 'DEPOSIT_CALL_TIMEOUT') {
-							console.warn('🟡 Deposit call timed out, but transaction may still be pending. Checking vault balance...');
-							// Wait a bit and check vault balance to see if deposit succeeded
-							setCountdown(5);
-							setCountdownMax(5);
-							setDepositStatus('Transaction timed out. Checking if it succeeded on-chain...');
-							await new Promise(resolve => setTimeout(resolve, 5000));
-							setCountdown(0);
-							if (typeof vault.balanceOf === 'function') {
-								const newVaultBalance = await vault.balanceOf(address);
-								const newVaultBalanceNum = Number(formatUnits(newVaultBalance, 6));
-								console.log('Vault balance after timeout:', newVaultBalanceNum, 'Previous:', vaultBalance);
-								if (newVaultBalanceNum > (vaultBalance || 0)) {
-									console.log('Deposit succeeded despite timeout!');
-									setVaultBalance(newVaultBalanceNum);
-									// Update USDC balance
-									const usdc = new Contract(USDC_ADDRESS, USDC_ABI, provider);
-									if (typeof usdc.balanceOf === 'function') {
-										const balance = await usdc.balanceOf(address);
-										const newUsdcBalance = Number(formatUnits(balance, 6));
-										console.log('Updated USDC balance:', newUsdcBalance);
-										setUsdcBalance(newUsdcBalance);
-									}
-									setDepositSuccess(true);
-									setDepositStatus('Deposit successful!');
-									console.log('Deposit status set to successful');
-									// Reset status after 5 seconds
-									setTimeout(() => {
-										console.log('Clearing deposit status after timeout');
-										setDepositStatus(null);
-									}, 5000);
-									// Skip the rest of deposit flow
-									depositTx = null;
-								} else {
-									// Transaction timed out and balance didn't increase
-									console.warn('Deposit transaction timed out and balance did not increase');
-									setDepositStatus('Transaction timed out. Please check your wallet or BaseScan to verify the transaction status.');
-									setDepositLoading(false);
-									setCountdown(0);
-									return; // Exit the function gracefully
-								}
-							} else {
-								console.error('Cannot verify deposit status - balanceOf not available');
-								setDepositStatus('Cannot verify deposit status. Please check your wallet or BaseScan.');
-								setDepositLoading(false);
-								setCountdown(0);
-								return; // Exit the function gracefully
-							}
-						}
-					}
-					
-					if (depositTx) {
-						// Log detailed transaction metadata
-						console.log('✅ Deposit Transaction Sent:', {
-							hash: depositTx.hash,
-							from: depositTx.from,
-							to: depositTx.to,
-							value: depositTx.value?.toString(),
-							gasLimit: depositTx.gasLimit?.toString(),
-							gasPrice: depositTx.gasPrice?.toString(),
-							maxFeePerGas: depositTx.maxFeePerGas?.toString(),
-							maxPriorityFeePerGas: depositTx.maxPriorityFeePerGas?.toString(),
-							nonce: depositTx.nonce,
-							chainId: depositTx.chainId,
-							type: depositTx.type,
-							data: depositTx.data
-						});
-						
-						setDepositStatus('Deposit transaction sent. Waiting for confirmation...');
-						// Show BaseScan link as plain string if available
-						if (depositTx.hash) {
-							setDepositStatus(
-								`Deposit transaction sent. Waiting for confirmation...\nView on BaseScan: https://basescan.org/tx/${depositTx.hash}`
-							);
-						}
-						console.log('⏳ Waiting for deposit tx confirmation...');
-						const receipt = await depositTx.wait();
-						
-						// Log detailed receipt metadata
-						console.log('✅ Deposit Transaction Confirmed:', {
-							transactionHash: receipt.hash,
-							blockNumber: receipt.blockNumber,
-							blockHash: receipt.blockHash,
-							from: receipt.from,
-							to: receipt.to,
-							gasUsed: receipt.gasUsed?.toString(),
-							cumulativeGasUsed: receipt.cumulativeGasUsed?.toString(),
-							effectiveGasPrice: receipt.gasPrice?.toString(),
-							status: receipt.status,
-							logsBloom: receipt.logsBloom,
-							events: receipt.logs?.length || 0,
-							confirmations: await receipt.confirmations()
-						});
-						setDepositSuccess(true);
-						setDepositStatus('Deposit successful!');
-						console.log('Deposit status set to successful');
-						// Update vault balance and USDC balance
-						if (typeof vault.balanceOf === 'function') {
-							const newVaultBalance = await vault.balanceOf(address);
-							const newVaultBalanceNum = Number(formatUnits(newVaultBalance, 6));
-							console.log('Updated vault balance:', newVaultBalanceNum);
-							setVaultBalance(newVaultBalanceNum);
-						}
-						// Update USDC balance
-						const usdc = new Contract(USDC_ADDRESS, USDC_ABI, provider);
-						if (typeof usdc.balanceOf === 'function') {
-							const balance = await usdc.balanceOf(address);
-							const newUsdcBalance = Number(formatUnits(balance, 6));
-							console.log('Updated USDC balance:', newUsdcBalance);
-							setUsdcBalance(newUsdcBalance);
-						}
-						// Reset status after 5 seconds
-						setTimeout(() => {
-							console.log('Clearing deposit status after timeout');
-							setDepositStatus(null);
-						}, 5000);
-					}
-				} catch (depositErr: any) {
-					console.error('Deposit transaction error:', depositErr);
-					setCountdown(0);
-					
-					// Handle specific error messages
-					let errorMsg = 'Deposit transaction failed or rejected.';
-					if (depositErr) {
-						if (typeof depositErr === 'string') {
-							errorMsg = depositErr;
-						} else if (depositErr.message) {
-							errorMsg = depositErr.message;
-						} else if (depositErr.reason) {
-							errorMsg = depositErr.reason;
-						}
-						
-						// Handle insufficient funds errors
-						if (errorMsg.includes('insufficient funds for gas') || 
-							errorMsg.includes('insufficient funds for intrinsic transaction cost') || 
-							errorMsg.includes('insufficient funds')) {
-							errorMsg = 'Your wallet does not have enough ETH on Base to pay for gas. Please fund your wallet and try again.';
-						}
-					}
-					
-					setDepositStatus(errorMsg);
-					setDepositError(errorMsg);
-					setDepositLoading(false);
-					return; // Exit gracefully instead of throwing
-				}
-			} else {
-				throw new Error('Vault deposit method not available');
-			}
 		} catch (err: any) {
 			let errorMsg = 'Deposit failed';
-			// Debugging info
 			console.error('Deposit error:', err);
-			if (err) {
-				if (typeof err === 'string') {
-					errorMsg = err;
-				} else if (err.message) {
-					errorMsg = err.message;
-				} else if (err.reason) {
-					errorMsg = err.reason;
-				} else if (err.toString) {
-					errorMsg = err.toString();
-				}
-				// Log full error object for deeper debugging, avoid BigInt serialization
-				if (typeof err === 'object') {
-					try {
-						const safeErr = JSON.parse(JSON.stringify(err, (_key, value) =>
-							typeof value === 'bigint' ? value.toString() : value
-						));
-						console.error('Full error object:', safeErr);
-					} catch (e) {
-						console.error('Full error object (raw):', err);
-					}
-				}
-			}
-			// viem/ethers insufficient funds error handling
-			if (errorMsg.includes('insufficient funds for gas') || errorMsg.includes('insufficient funds')) {
+			if (err.message) errorMsg = err.message;
+			else if (err.reason) errorMsg = err.reason;
+			
+			if (errorMsg.includes('insufficient funds')) {
 				errorMsg = 'Your wallet does not have enough ETH on Base to pay for gas. Please fund your wallet and try again.';
-			}
-			// Handle missing revert data / call exception
-			if (errorMsg.includes('missing revert data') || errorMsg.includes('CALL_EXCEPTION')) {
-				errorMsg = 'Deposit failed: The contract reverted without a message. Please check your USDC balance, approval, and try again. If the problem persists, contact support.';
 			}
 			setDepositError(errorMsg);
 			setDepositStatus(errorMsg);
 		} finally {
+			if (countdownInterval) clearInterval(countdownInterval);
 			setDepositLoading(false);
 			setCountdown(0);
 		}
