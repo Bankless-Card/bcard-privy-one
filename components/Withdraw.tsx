@@ -2,6 +2,8 @@ import { usePrivy, useWallets } from '@privy-io/react-auth';
 import React, { useState } from 'react';
 import { Contract, formatUnits, BrowserProvider } from 'ethers';
 
+import Button from './Button';
+
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'; // USDC on Base
 const USDC_ABI = [
     "function balanceOf(address owner) view returns (uint256)"
@@ -351,6 +353,15 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
     if (!vaultBalance || vaultBalance <= 0) {
         return null;
     }
+
+    return (
+        <>
+        {vaultBalance && vaultBalance >= 1 && (
+            <Button buttonText="Withdraw $1" secondary={true} buttonFunction={() => handleWithdraw(1)}  />
+        )}
+        </>
+    )
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '200px' }}>
             <p><strong>Withdraw from USDC Vault</strong></p>

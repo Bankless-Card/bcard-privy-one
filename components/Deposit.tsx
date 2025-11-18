@@ -687,11 +687,14 @@ export default function Deposit() {
 
 			<div className={`${styles.vaultButtons} vaultButtons`}>
 				{usdcBalance !== null && usdcBalance > 0 && (
-					<>
-					<Button buttonText="Deposit $1" secondary={true} buttonFunction={() => handleDeposit(1)} enabled={!depositLoading && !approvalLoading} />
-					<Button buttonText="Withdraw $1" secondary={true} />
-					</>
+				<Button buttonText="Deposit $1" secondary={true} buttonFunction={() => handleDeposit(1)} enabled={!depositLoading && !approvalLoading} />
 				)}
+				<Withdraw 
+					vaultBalance={vaultBalance} 
+					setVaultBalance={setVaultBalance}
+					usdcBalance={usdcBalance}
+					setUsdcBalance={setUsdcBalance}
+				/>
 			</div>
 		</div>
 	)
