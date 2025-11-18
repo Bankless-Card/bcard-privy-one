@@ -1,28 +1,32 @@
 import styles from './Vote.module.css';
 import SnapshotSendVote from './SnapshotSendVote';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import LoadingSpinner from './LoadingSpinner';
 
 const QUERY_URL = "https://hub.snapshot.org/graphql?query=%0Aquery%20Spaces%20%7B%0A%20%20spaces(%0A%20%20%20%20first%3A%2020%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20name%0A%20%20%20%20about%0A%20%20%20%20network%0A%20%20%20%20symbol%0A%20%20%20%20strategies%20%7B%0A%20%20%20%20%20%20name%0A%20%20%20%20%20%20network%0A%20%20%20%20%20%20params%0A%20%20%20%20%7D%0A%20%20%20%20admins%0A%20%20%20%20moderators%0A%20%20%20%20members%0A%20%20%20%20filters%20%7B%0A%20%20%20%20%20%20minScore%0A%20%20%20%20%20%20onlyMembers%0A%20%20%20%20%7D%0A%20%20%20%20plugins%0A%20%20%7D%0A%7D%0A%0Aquery%20Proposals%20%7B%0A%20%20proposals(%0A%20%20%20%20first%3A%2020%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20space_in%3A%20%5B%22tranmer.eth%22%5D%0A%20%20%20%20%7D%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20title%0A%20%20%20%20body%0A%20%20%20%20choices%0A%20%20%20%20start%0A%20%20%20%20end%0A%20%20%20%20snapshot%0A%20%20%20%20state%0A%20%20%20%20author%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0Aquery%20Votes%20%7B%0A%20%20votes%20(%0A%20%20%20%20first%3A%201000%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20proposal%3A%20%22QmPvbwguLfcVryzBRrbY4Pb9bCtxURagdv1XjhtFLf3wHj%22%0A%20%20%20%20%7D%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0Aquery%20Follows%20%7B%0A%20%20follows%20(where%3A%20%7B%20follower%3A%20%220xeF8305E140ac520225DAf050e2f71d5fBcC543e7%22%20%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20follower%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%20%20created%0A%20%20%7D%0A%7D%0A&operationName=Proposals";
 
-export default function Vote({ }) {
+export default function Vote({ onlyActiveProposals=false }) {
 
 	const [votes, setVotes] = useState([]);
 	const [proposals, setProposals] = useState([]);
+	const [hasLoaded, setHasLoaded] = useState(false);
 
 
 	useEffect(() => {
 
 		async function init() {
-			let p = await getProposals();
+			let p = await getProposals(onlyActiveProposals);
 			//console.log(p);
 			setProposals(p);
+			setHasLoaded(true);
 		}
 
 		init();
 
 	}, []);
 
-	async function getProposals() {
+	async function getProposals(onlyActiveProposals) {
 
 		// first need a list of eligible spaces to check for proposals
 		// then need to get the proposals for each space (LIMIT: 5)
@@ -38,24 +42,48 @@ export default function Vote({ }) {
 			// let spaceList = 'banklessvault.eth","tranmer.eth';		// double quotes around each space name (start and end quotes are hard coded so this is not needed for a single space request)
 			let spaceList = process.env.NEXT_PUBLIC_SNAPSHOT_SPACE_ID;		// double quotes around each space name (start and end quotes are hard coded so this is not needed for a single space request)
 			let propNum = "5";
+			let propState = "*";
+			if( onlyActiveProposals ) {
+				propState = "active";
+			}
 
-			const SNAPSHOT_QUERY_ROUTE = "https://stagetx.banklesscard.xyz/api/snapshot";
+			const query = `
+			  query Proposals {
+			    proposals(
+			      first: ${propNum},
+			      skip: 0,
+			      where: {
+			        space_in: ["${spaceList}"],
+					state: "${propState}"
+			      },
+			      orderBy: "created",
+			      orderDirection: desc
+			    ) {
+			      id
+			      title
+			      body
+			      type
+			      choices
+			      start
+			      end
+			      snapshot
+			      state
+			      author
+			      space {
+			        id
+			        name
+			      }
+			    }
+			  }
+			`;
 
-			//let htmlQuery = "%0Aquery%20Proposals%20%7B%0A%20%20proposals(%0A%20%20%20%20first%3A%20"+propNum+"%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20space_in%3A%20%5B%22"+spaceList+"%22%5D%0A%20%20%20%20%7D%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20title%0A%20%20%20%20body%0A%20%20%20%20choices%0A%20%20%20%20start%0A%20%20%20%20end%0A%20%20%20%20snapshot%0A%20%20%20%20state%0A%20%20%20%20author%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Proposals";		// html encoded for address posting
-			let htmlQuery = "%0Aquery%20Proposals%20%7B%0A%20%20proposals(%0A%20%20%20%20first%3A%20"+propNum+"%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20space_in%3A%20%5B%22"+spaceList+"%22%5D%0A%20%20%20%20%7D%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20title%0A%20%20%20%20body%0A%20%20%20%20type%0A%20%20%20%20choices%0A%20%20%20%20start%0A%20%20%20%20end%0A%20%20%20%20snapshot%0A%20%20%20%20state%0A%20%20%20%20author%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Proposals";		// html encoded for address posting
-			let buildQuery = "https://hub.snapshot.org/graphql?query=%0Aquery%20Proposals%20%7B%0A%20%20proposals(%0A%20%20%20%20first%3A%20"+propNum+"%2C%0A%20%20%20%20skip%3A%200%2C%0A%20%20%20%20where%3A%20%7B%0A%20%20%20%20%20%20space_in%3A%20%5B%22"+spaceList+"%22%5D%0A%20%20%20%20%7D%2C%0A%20%20%20%20orderBy%3A%20%22created%22%2C%0A%20%20%20%20orderDirection%3A%20desc%0A%20%20)%20%7B%0A%20%20%20%20id%0A%20%20%20%20title%0A%20%20%20%20body%0A%20%20%20%20choices%0A%20%20%20%20start%0A%20%20%20%20end%0A%20%20%20%20snapshot%0A%20%20%20%20state%0A%20%20%20%20author%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%20%20name%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Proposals";
-
-			// await fetch(QUERY_URL)
-			// await fetch(buildQuery)
-			const response = await fetch(SNAPSHOT_QUERY_ROUTE, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					query: "spaces",
-					q: htmlQuery
-				})
+			const response = await fetch(process.env.NEXT_PUBLIC_SNAPSHOT_QUERY_ROUTE, {
+			  method: 'POST',
+			  headers: { 'Content-Type': 'application/json' },
+			  body: JSON.stringify({
+			    query: 'spaces',
+			    q: query
+			  })
 			});
 
 			const data = await response.json();
@@ -67,25 +95,40 @@ export default function Vote({ }) {
 			const votePromises = proposals.map(async (proposal) => {
 				// console.log(proposal.id);
 
-				let numVotes = 10;		// max number of votes to get
+				const voteQuery = `
+				  query Votes {
+				    votes(
+				      first: 1000,
+				      where: {
+				        proposal: "${proposal.id}"
+				      }
+				    ) {
+				      id
+				      voter
+				      created
+				      choice
+				      vp
+				      space {
+				        id
+				      }
+				    }
+				  }
+				`;
 
-				let votesQuery = "https://hub.snapshot.org/graphql?query=query%20Votes%20%7B%0A%20%20votes(first%3A%20"+numVotes+"%2C%20where%3A%20%7Bproposal%3A%20%22" +
-				proposal.id+"%22%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20vp%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Votes";
-			
-				let intVoteQuery = "query%20Votes%20%7B%0A%20%20votes(first%3A%20"+numVotes+"%2C%20where%3A%20%7Bproposal%3A%20%22" +
-				proposal.id+"%22%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20vp%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Votes";
+				const encodedVoteQuery = encodeURIComponent(voteQuery);
 
-				const voteResponse = await fetch(SNAPSHOT_QUERY_ROUTE, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"authorization": "internal-auth"
-					},
-					body: JSON.stringify({
-						query: "votes",
-						q: intVoteQuery
-					})
+				const voteResponse = await fetch(process.env.NEXT_PUBLIC_SNAPSHOT_QUERY_ROUTE, {
+				  method: "POST",
+				  headers: {
+				    "Content-Type": "application/json",
+				    "authorization": "internal-auth"
+				  },
+				  body: JSON.stringify({
+				    query: "votes",
+				    q: voteQuery
+				  })
 				});
+
 
 				const voteData = await voteResponse.json();
 				// console.log(voteData.data);
@@ -119,11 +162,12 @@ export default function Vote({ }) {
 		}
 	}
 
+	if( !hasLoaded ) {
+		return (<LoadingSpinner />);
+	}
 
 	return (
 		<div className={styles.VotePageContainer}>
-			<h3>Votes</h3>
-
 		
 			{/* for each proposal in the proposals array, create a SnapshotSendVote component */}
 			{proposals && proposals.length > 0 && 
@@ -145,7 +189,6 @@ export default function Vote({ }) {
 									proposal={proposal.id}
 									snaptime={proposal.start}
 									endtime={proposal.end}
-									votes={proposal.votes}
 									voteWallet='privy'		// set to privy for embedded, all others will give personal
 									propDump={proposal}
 									key={index}
@@ -159,6 +202,17 @@ export default function Vote({ }) {
 					}
 				})
 			}
+
+			{proposals && proposals.length < 1 && (
+				<div>
+					There are no votes currently running.
+				</div>
+			)}
+
+			<Link href="/#vote" className={ `${styles.linkOut} linkOut` }>
+          		Check out all votes.
+        	</Link>
+			
 
 		</div>
 	);

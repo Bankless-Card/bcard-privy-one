@@ -6,7 +6,7 @@ This is a [Next.js](https://nextjs.org/) project with [**Privy Auth**](https://w
 
 - **Black Flag Theme**: Dark theme with custom styling inspired by the Black Flag website
 - **Authentication**: Secure login with Privy Auth
-- **BCard Integration**: Create and manage digital business cards
+- **BCard Integration**: Create and manage digital debit cards
 - **Responsive Design**: Works on desktop and mobile devices
 
 ## Setup
@@ -21,11 +21,7 @@ git clone https://github.com/yourusername/bcard-privy-one
 npm install
 ```
 
-3. Set up your environment variables by creating a `.env.local` file with your Privy App credentials.
-```
-NEXT_PUBLIC_PRIVY_APP_ID=<your-privy-app-id>
-NEXT_PUBLIC_PRIVY_APP_CLIENT_ID=<your-privy-app-client-id>
-```
+3. Set up your environment variables by creating `.env.development` & `.env.production` file with the credentials listed in `.env.example`.
 
 ## Local Development
 
