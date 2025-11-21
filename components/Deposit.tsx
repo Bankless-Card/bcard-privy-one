@@ -714,9 +714,10 @@ export default function Deposit() {
 				</div>
 			)}
 
+			<div className={`${styles.txDetails} txDetails`}>
 			{/* Countdown Timer with Pie Chart */}
 			{countdown > 0 && (
-				<div style={{ display: 'flex', alignItems: 'center', gap: '1em', margin: '0.5em 0' }}>
+				<div className={`${styles.txTimer} txTimer`}>
 					<svg width="40" height="40" viewBox="0 0 40 40" style={{ transform: 'rotate(-90deg)' }}>
 						<circle cx="20" cy="20" r="18" fill="none" stroke="#e0e0e0" strokeWidth="3" />
 						<circle 
@@ -743,16 +744,22 @@ export default function Deposit() {
 							{countdown}s
 						</text>
 					</svg>
-					<span style={{ color: '#666', fontSize: '0.9em' }}>Processing transaction...</span>
+					<div>{ depositSuccess && !depositStatus ? "Deposit successful!" : "Deposit in progress..."}</div>
 				</div>
 			)}
 
-			{approvalLoading && <div style={{ color: '#888' }}>Approving tokens for deposit...</div>}
-			{approvalSuccess && <div style={{ color: 'green' }}>Approval successful!</div>}
+			{ (approvalLoading || approvalSuccess || depositSuccess) && (
+			<ol>
+				<li>Approve tokens for deposit {approvalLoading&&"⏳"}{(approvalSuccess||depositSuccess)&&"✅"}</li>
+				<li>Deposit tokens {(approvalSuccess&&!depositSuccess)&&"⏳"}{depositSuccess&&"✅"}</li>
+			</ol>
+			)}
+
 			{depositStatus && <div style={{ color: depositSuccess ? 'green' : 'red', whiteSpace: 'pre-line' }}>{depositStatus}</div>}
 			{depositSuccess && !depositStatus && (
 				<div style={{ color: 'green' }}>Deposit successful!</div>
 			)}
+			</div>
 
 			{vaultBalance !== null && vaultBalance !== 0 && (
 				<Withdraw 

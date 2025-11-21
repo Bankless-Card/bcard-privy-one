@@ -355,9 +355,10 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
     return (
         <div style={{ display: 'flex', flexDirection: 'column'}}>
             
+            <div className={`${styles.txDetails} txDetails`}>
             {/* Countdown Timer with Pie Chart */}
             {countdown > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1em', margin: '0.5em 0' }}>
+                <div className={`${styles.txTimer} txTimer`}>
                     <svg width="40" height="40" viewBox="0 0 40 40" style={{ transform: 'rotate(-90deg)' }}>
                         <circle cx="20" cy="20" r="18" fill="none" stroke="#e0e0e0" strokeWidth="3" />
                         <circle 
@@ -384,7 +385,7 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                             {countdown}s
                         </text>
                     </svg>
-                    <span style={{ color: '#666', fontSize: '0.9em' }}>Processing transaction...</span>
+                    <span>{ withdrawSuccess && !withdrawStatus ? "Withdraw successful!" : "Withdraw in progress..."}</span>
                 </div>
             )}
             
@@ -401,6 +402,7 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
             {withdrawSuccess && !withdrawStatus && (
                 <div style={{ color: 'green' }}>Withdraw successful!</div>
             )}
+            </div>
             
             <div className={`${styles.vaultButtons} vaultButtons`}>
                 {/* Dynamic amount button */}

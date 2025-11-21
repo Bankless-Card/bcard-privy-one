@@ -27,6 +27,21 @@
 	justify-content: space-around;
 }
 
+.txDetails {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+.txTimer {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 1em;
+	margin: 0.5em 0;
+}
+
 .technicalDetails {
 	margin-top: 1rem;
 	font-size: 0.9em;
