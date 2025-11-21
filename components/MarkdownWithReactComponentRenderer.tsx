@@ -2,6 +2,8 @@ import React from 'react';
 import Link from 'next/link';
 import BCardIntegration from './bcard-integration';
 import LoginButton from './LoginButton';
+import Vote from './Vote';
+import Deposit from './Deposit';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 
@@ -11,6 +13,8 @@ const ComponentRegistry = {
   'BCardIntegration': BCardIntegration,
   'FlagEmoji': () => <span className="bf-flag text-4xl">🏴</span>,
   'LoginButton': LoginButton,
+  'Vote' : Vote,
+  'Deposit': Deposit
   // Add more components as needed
 };
 
@@ -108,7 +112,7 @@ function BlackFlagContent({ markdownContent }: { markdownContent: string }) {
   );
 }
 
-export default function BlackFlagSite({ markdownContent = '' }: { markdownContent?: string }) {
+export default function MarkdownWithReactComponentRenderer({ markdownContent = '' }: { markdownContent?: string }) {
   return (
     <BlackFlagContent markdownContent={markdownContent} />
   );

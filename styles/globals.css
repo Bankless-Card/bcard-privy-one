@@ -16,3 +16,11 @@
 .main-content {
 	flex-grow: 1;
 }
+
+.desktop-main-content {
+  display: block;
+}
+
+.mobile-main-content {
+  display: none;
+}

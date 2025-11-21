@@ -1,16 +1,35 @@
-
 import { GetStaticProps, GetStaticPaths } from 'next';
 import fs from 'fs';
 import path from 'path';
-import BlackFlagSite from '../../components/black-flag-site';
+import MarkdownWithReactComponentRenderer from '../../components/MarkdownWithReactComponentRenderer';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
 
 type ContentPageProps = {
-  markdownContent: string;
-  title: string;
+  initialMarkdownContent: string;
+  initialTitle: string;
 };
 
-export default function ContentPage({ markdownContent, title }: ContentPageProps) {
+export default function ContentPage({ initialMarkdownContent, initialTitle }: ContentPageProps) {
+  const router = useRouter();
+  const { slug } = router.query;
+  const [markdownContent, setMarkdownContent] = useState(initialMarkdownContent);
+  const [title, setTitle] = useState(initialTitle);
+
+  useEffect(() => {
+    if (slug) {
+      fetch(`/content/${slug}.md`)
+        .then(res => res.text())
+        .then(text => {
+          setMarkdownContent(text);
+          const titleMatch = text.match(/^#\s+(.*)/);
+          const newTitle = titleMatch ? titleMatch[1] : 'BCard';
+          setTitle(newTitle);
+        });
+    }
+  }, [slug]);
+
   return (
     <>
       <Head>
@@ -18,7 +37,7 @@ export default function ContentPage({ markdownContent, title }: ContentPageProps
       </Head>
       <div className="bf-theme">
         <div className="bf-container py-10">
-          <BlackFlagSite markdownContent={markdownContent} />
+          <MarkdownWithReactComponentRenderer markdownContent={markdownContent} />
         </div>
       </div>
     </>
@@ -49,8 +68,8 @@ export const getStaticProps: GetStaticProps<ContentPageProps> = async (context) 
 
   return {
     props: {
-      markdownContent,
-      title,
+      initialMarkdownContent: markdownContent,
+      initialTitle: title,
     },
   };
 };

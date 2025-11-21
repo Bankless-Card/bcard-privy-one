@@ -4,18 +4,19 @@ import Image from 'next/image';
 import styles from './SnapshotSendVote.module.css';
 import Button from './Button';
 import Modal from './Modal';
-import SnapVote from './SnapVote';
 import LoadingSpinner from './LoadingSpinner';
 import { formatDistanceToNow } from 'date-fns';
 
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import snapshot from '@snapshot-labs/snapshot.js';
 import { Web3Provider } from '@ethersproject/providers';
+import { BrowserProvider } from 'ethers';
 
 import { createPublicClient, http } from 'viem';
 import { optimism } from 'viem/chains';
 import { marked } from 'marked';
 import { PrivyUser, Wallet } from '@privy-io/react-auth';
+
 
 const BANK_OP_CONTRACT = '0x29FAF5905bfF9Cfcc7CF56a5ed91E0f091F8664B';
 const OP_BANK_ABI = [
@@ -83,7 +84,6 @@ interface SnapshotSendVoteProps {
     proposal?: string;
     snaptime?: string | number;
     endtime?: string | number;
-    votes?: Vote[];
     propDump: Proposal;
     voteWallet?: string;
 }
@@ -107,7 +107,6 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
     proposal = "0x4ebec339d3e46ba35edf991213358b457b5127bcd78c069259a837b6103091e3",
     snaptime = "unknown",
     endtime = "unknown",
-    votes,
     propDump,
     voteWallet = "privy",
 }) => {
@@ -115,9 +114,6 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
     const { ready, wallets } = useWallets();
     const { user } = usePrivy();
     const privyUser = user;
-
-    const hub = 'https://hub.snapshot.org';
-    const client = new snapshot.Client712(hub);
 
     const [bankBalance, setBankBalance] = useState<number | null>(null);
     const [embedAdr, setEmbedAdr] = useState<string | null>(null);
@@ -134,7 +130,6 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
 
     async function startVote(val: number) {
         setVoteProcess(VOTE_PROCESS.INIT);
-        console.log(val);
 
         if (propDump && propDump.type == "weighted") {
             const weightedValues = getWeightedVotingValues();
@@ -159,7 +154,7 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
     async function sendVote(
         val: number | null,
         choiceType: 'basic' | 'weighted' = 'basic',
-        app: string = 'bcard-app',
+        app: string = 'blackflag-app',
         voteWith: string = voteWallet,
         reason?: string,
     ) {
@@ -184,8 +179,13 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
                 if (!embeddedWallet) return;
 
                 const privyProvider = await embeddedWallet.getEthereumProvider();
-                const ethersProvider = new Web3Provider(privyProvider);
-                const account = embedAdr;
+                const ethersProvider = new BrowserProvider(privyProvider);
+                const signer = await ethersProvider.getSigner();
+                //monkey patching this since snapshot doesn't support ethers v6
+                signer._signTypedData = async (domain, types, value) => {
+                  return signer.signTypedData(domain, types, value);
+                };
+                const account = await signer.getAddress();
 
                 const submitData = {
                     space: space,
@@ -196,7 +196,7 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
                     app: app
                 };
 
-                const resultOfSnapVote = await SnapVote(ethersProvider, account, submitData);
+                const resultOfSnapVote = await SnapVote(signer, account, submitData);
                 if (resultOfSnapVote) {
                     setVoteProcess(VOTE_PROCESS.THANKS);
                 } else {
@@ -209,11 +209,17 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
             return;
         } else {
             if (embedAdr) {
+
                 const embeddedWallet = wallets.find((wallet) => wallet.walletClientType === 'privy');
                 if (!embeddedWallet) return;
 
                 const privyProvider = await embeddedWallet.getEthereumProvider();
-                const ethersProvider = new Web3Provider(privyProvider);
+                const ethersProvider = new BrowserProvider(privyProvider);
+                const signer = await ethersProvider.getSigner();
+                //monkey patching this since snapshot doesn't support ethers v6
+                signer._signTypedData = async (domain, types, value) => {
+                  return signer.signTypedData(domain, types, value);
+                };
                 const account = embedAdr;
 
                 const submitData = {
@@ -225,7 +231,10 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
                     app: app
                 };
 
-                const resultOfSnapVote = await SnapVote(ethersProvider, account, submitData);
+
+
+
+                const resultOfSnapVote = await SnapVote(signer, account, submitData);
                 if (resultOfSnapVote) {
                     setVoteProcess(VOTE_PROCESS.THANKS);
                 } else {
@@ -238,41 +247,102 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
         }
     }
 
+    async function SnapVote(ethersProvider: any, account: string, submitData: SubmitData): Promise<boolean> {
+
+        //console.log("SNAP VOTE: ", submitData, account);
+
+        const hub = 'https://hub.snapshot.org'; // or https://testnet.hub.snapshot.org for testnet
+        const client = new snapshot.Client712(hub);
+
+        try {
+            // build and commit the vote
+            const receipt = await client.vote(ethersProvider, account, submitData);
+
+            if (receipt) {
+
+                let notice = "Proposal Vote #" + submitData.choice + " submitted successfully.";
+                if (submitData.reason) {
+                    notice = notice + " Reason: " + submitData.reason;
+                }
+
+                return true;
+
+            }
+
+        } catch (e: any) {
+
+            console.log(e);
+            console.log("Vote failed to send from SnapVote. " + e.message);
+
+            return false;
+        }
+
+        return false;
+    }
+
     async function getVotes(): Promise<Vote[]> {
         let newVotes: Vote[] = [];
-        const SNAPSHOT_QUERY_ROUTE = "/api/bc/snap-query";
-        const htmlQuery = `query%20Votes%20%7B%0A%20%20votes(first%3A%201000%2C%20where%3A%20%7Bproposal%3A%20%22${proposal}%22%7D)%20%7B%0A%20%20%20%20id%0A%20%20%20%20voter%0A%20%20%20%20created%0A%20%20%20%20choice%0A%20%20%20%20vp%0A%20%20%20%20space%20%7B%0A%20%20%20%20%20%20id%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0A&operationName=Votes`;
+        const query = `
+          query Votes {
+            votes(
+              first: 1000,
+              where: { proposal: "${proposal}" }
+            ) {
+              id
+              voter
+              created
+              choice
+              vp
+              space {
+                id
+              }
+            }
+          }
+        `;
 
-        await fetch(SNAPSHOT_QUERY_ROUTE, {
+        await fetch(process.env.NEXT_PUBLIC_SNAPSHOT_QUERY_ROUTE, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ q: htmlQuery }),
+            body: JSON.stringify({ q: query }),
         })
-            .then(response => response.json())
-            .then(data => {
-                newVotes = data.data.data.votes;
-                setAllVotes(newVotes);
-            });
+        .then(response => response.json())
+        .then(data => {
+            newVotes = data.data.data.votes;
+            setAllVotes(newVotes);
+        });
         return newVotes;
     }
 
     async function getVP(address: string, space: string, proposal: string) {
-        const SnapQLquery = `https://hub.snapshot.org/graphql?query=query%20%7B%0A%20%20vp%20(%0A%20%20%20%20voter%3A%20%22${address}%22%0A%20%20%20%20space%3A%20%22${space}%22%0A%20%20%20%20proposal%3A%20%22${proposal}%22%0A%20%20)%20%7B%0A%20%20%20%20vp%0A%20%20%20%20vp_by_strategy%0A%20%20%20%20vp_state%0A%20%20%7D%20%0A%7D%0A`;
+        const query = `
+          query {
+            vp(
+              voter: "${address}"
+              space: "${space}"
+              proposal: "${proposal}"
+            ) {
+              vp
+              vp_by_strategy
+              vp_state
+            }
+          }
+        `;
+
         let qReturn: any = {};
-        await fetch('/api/bc/snap-query', {
+        await fetch(process.env.NEXT_PUBLIC_SNAPSHOT_QUERY_ROUTE, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ address, space, proposal, q: SnapQLquery }),
+            body: JSON.stringify({ address, space, proposal, q: query }),
         })
-            .then(response => response.json())
-            .then(data => {
-                qReturn = data;
-                if (qReturn.data) {
-                    qReturn = qReturn.data;
-                }
-                setVp({ ...vp, [address]: qReturn });
-                return qReturn;
-            });
+        .then(response => response.json())
+        .then(data => {
+            qReturn = data;
+            if (qReturn.data) {
+                qReturn = qReturn.data;
+            }
+            setVp({ ...vp, [address]: qReturn });
+            return qReturn;
+        });
     }
 
     async function getSetBalance(token: string) {
@@ -285,11 +355,24 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
         consolidatedBalance.combined = embedVP;
 
         if (Object.keys(vp).length === 0 && embedVP === 0) {
-            const htmlQuery = `query%20%7B%0A%20%20vp%20(%0A%20%20%20%20voter%3A%20%22${embedAdr}%22%0A%20%20%20%20space%3A%20%22${space}%22%0A%20%20%20%20proposal%3A%20%22${proposal}%22%0A%20%20)%20%7B%0A%20%20%20%20vp%0A%20%20%20%20vp_by_strategy%0A%20%20%20%20vp_state%0A%20%20%7D%20%0A%7D%0A`;
-            await fetch("/api/bc/snap-query", {
+            const query = `
+              query {
+                vp(
+                  voter: "${embedAdr}"
+                  space: "${space}"
+                  proposal: "${proposal}"
+                ) {
+                  vp
+                  vp_by_strategy
+                  vp_state
+                }
+              }
+            `;
+
+            await fetch(process.env.NEXT_PUBLIC_SNAPSHOT_QUERY_ROUTE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ address: embedAdr, space, proposal, q: htmlQuery }),
+                body: JSON.stringify({ address: embedAdr, space, proposal, q: query }),
             })
                 .then(response => response.json())
                 .then(data => {
@@ -472,10 +555,12 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
     useEffect(() => {
         async function init() {
             let myVoteInit: Vote | null = null;
+            let userAddr = await getSetEmbeddedAddress();
+
 
             if (allVotes) {
                 allVotes.every(v => {
-                    if (v.voter === embedAdr || v.voter === personalAdr) {
+                    if (v.voter === userAddr || v.voter === personalAdr) {
                         myVoteInit = v;
                         setMyVote(v);
                         setVoteProcess(VOTE_PROCESS.COMPLETE);
@@ -646,7 +731,7 @@ const SnapshotSendVote: React.FC<SnapshotSendVoteProps> = ({
                     <a className={styles.snapshotLink} href={url} target="_blank">View on Snapshot</a>
                 </div>
                 {voteProcess === VOTE_PROCESS.INIT &&
-                    <Modal backButtonClickHandler={() => resetVote()} className={styles.voteModal}>
+                    <Modal backButtonClickHandler={() => resetVote()} className={styles.voteModal} title="Vote Summary">
                         <div className={styles.voteModalContainer}>
                             <div className={styles.SendVote}>
                                 {propDump && propDump.type === "weighted" &&

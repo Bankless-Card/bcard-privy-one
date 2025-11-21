@@ -2,6 +2,7 @@ import { usePrivy, useWallets } from '@privy-io/react-auth';
 import React, { useEffect, useState } from 'react';
 import { Contract, formatUnits, BrowserProvider } from 'ethers';
 
+import styles from './Deposit.module.css';
 import Withdraw from './Withdraw';
 
 
@@ -609,14 +610,15 @@ export default function Deposit() {
 	}
 
 	return (
-		<div style={{ display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
-			<p><strong>Interact with USDC Vault</strong></p>
-			<div>Your ETH balance on Base: {ethBalance === null ? 'Loading...' : ethBalance.toFixed(8)}</div>
-			<div>Your USDC balance on Base: {usdcBalance === null ? 'Loading...' : `$${usdcBalance.toFixed(2)}`}</div>
-			{/* <div>Your Vault balance: {vaultBalance === null ? 'Loading...' : `$${vaultBalance.toFixed(2)}`}</div> */}
+		<div className={`${styles.vaultWidget} vaultWidget`}>
+
+			<div className={`${styles.balances} balances`}>
+				<div className={`${styles.tokenBalance} tokenBalance`}>{vaultBalance === null ? 'Loading...' : `$${vaultBalance.toFixed(2)}`} deposited</div>
+				<div className={`${styles.tokenBalance} tokenBalance`}>{usdcBalance === null ? 'Loading...' : `$${usdcBalance.toFixed(2)}`} available to deposit</div>
+			</div>
 			
 			{usdcBalance !== null && usdcBalance > 0 && ethBalance !== null && ethBalance > 0 && (
-				<div style={{ display: 'flex', gap: '0.5em', margin: '1em 0', flexWrap: 'wrap' }}>
+				<div className={`${styles.vaultButtons} vaultButtons`}>
 					{/* Always show $1 button if balance >= $1 */}
 					{usdcBalance >= 1 && (
 						<button 
@@ -761,12 +763,18 @@ export default function Deposit() {
 				/>
 			)}
 
-			<div style={{ marginTop: 'auto', paddingTop: '2rem', fontSize: '0.9em', color: '#888' }}>
-				Wallet Address: {walletAddress
-					? walletAddress
-					: wallets && wallets.length === 0
-						? 'No wallet connected'
-						: 'Loading...'}
+			<div className={`${styles.technicalDetails} technicalDetails`}>
+				<strong>Technical details:</strong>
+				<ul>
+					<li>All deposits on BASE chain</li>
+					<li>Your ETH balance on Base: {ethBalance === null ? 'Loading...' : ethBalance.toFixed(8)}</li>
+					<li>Wallet Address: {walletAddress
+						? walletAddress
+						: wallets && wallets.length === 0
+							? 'No wallet connected'
+							: 'Loading...'}
+					</li>
+				</ul>
 			</div>
 		</div>
 	);

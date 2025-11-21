@@ -1,0 +1,26 @@
+/*
+ * Mobile-specific styles for BPages
+ *
+ * This file contains CSS rules that are applied only on smaller screens
+ * to make the site responsive and mobile-friendly.
+ */
+
+@media (max-width: 767px) {
+  .sidebar {
+    display: none;
+  }
+
+  .desktop-main-content {
+    display: none;
+  }
+
+  .mobile-main-content {
+    display: block;
+  }
+
+  footer {
+    position: static;
+    padding-bottom: 50px;
+  }
+
+}

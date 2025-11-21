@@ -1,6 +1,7 @@
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import React, { useState } from 'react';
 import { Contract, formatUnits, BrowserProvider } from 'ethers';
+import styles from './Deposit.module.css';
 
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'; // USDC on Base
 const USDC_ABI = [
@@ -352,8 +353,7 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
         return null;
     }
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '200px' }}>
-            <p><strong>Withdraw from USDC Vault</strong></p>
+        <div style={{ display: 'flex', flexDirection: 'column'}}>
             
             {/* Countdown Timer with Pie Chart */}
             {countdown > 0 && (
@@ -402,7 +402,7 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                 <div style={{ color: 'green' }}>Withdraw successful!</div>
             )}
             
-            <div style={{ display: 'flex', gap: '0.5em', margin: '1em 0', flexWrap: 'wrap' }}>
+            <div className={`${styles.vaultButtons} vaultButtons`}>
                 {/* Dynamic amount button */}
                 {vaultBalance && vaultBalance >= 1 && (
                     <button 
@@ -467,9 +467,6 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                     </button>
                 )}
             </div>
-            
-            <div>Your Vault balance: {vaultBalance === null ? 'Loading...' : `$${vaultBalance.toFixed(2)}`}</div>
-            {/* <div>Your USDC balance: {usdcBalance === null ? 'Loading...' : `$${usdcBalance.toFixed(2)}`}</div> */}
         </div>
     );
 }

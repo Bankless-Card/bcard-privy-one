@@ -48,8 +48,6 @@ Voters get to decide which events get funded.
     </a>
 </div>
 
-This initiative is managed using a [Multisig](https://basescan.org/address/0xc9Dd18f35E406Bf94cf937c6aAE618D7e84A6A6d) with 2 signers: [@links](https://farcaster.xyz/links) and [@icedcool](https://farcaster.xyz/icedcool).
-
 ## Official Links
 
 - [Farcaster](https://farcaster.xyz/~/channel/blackflag)

@@ -1,23 +1,25 @@
 import "../styles/globals.css";
+import "../styles/mobile.css";
 import type { AppProps } from "next/app";
 import Head from "next/head";
 import { PrivyProvider } from "@privy-io/react-auth";
 
 function MyApp({ Component, pageProps }: AppProps) {
   // Determine base path for assets
-  const assetPrefix = process.env.NODE_ENV === "production" ? "/bcard-privy-one" : "";
 
   return (
     <>
       <Head>
 
-        <link rel="icon" href={`${assetPrefix}/favicons/favicon.ico`} sizes="any" />
-        <link rel="icon" href={`${assetPrefix}/favicons/icon.svg`} type="image/svg+xml" />
-        <link rel="apple-touch-icon" href={`${assetPrefix}/favicons/apple-touch-icon.png`} />
-        <link rel="manifest" href={`${assetPrefix}/favicons/manifest.json`} />
+        <link rel="icon" href={`/favicons/favicon.ico`} sizes="any" />
+        <link rel="icon" href={`/favicons/icon.svg`} type="image/svg+xml" />
+        <link rel="apple-touch-icon" href={`/favicons/apple-touch-icon.png`} />
+        <link rel="manifest" href={`/favicons/manifest.json`} />
 
         <title>We are the Black Flag</title>
         <meta name="description" content="Join the 🏴 - an IRL social network." />
+
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
