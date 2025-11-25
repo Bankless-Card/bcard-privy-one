@@ -34,12 +34,28 @@
 	align-items: center;
 }
 
-.txTimer {
+.txStatus {
+	margin-top: 0.5rem;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+.txGoal {
+	font-weight: bold;
+}
+
+.txProgress {
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	gap: 1em;
 	margin: 0.5em 0;
+}
+
+.txSuccess {
+
 }
 
 .technicalDetails {

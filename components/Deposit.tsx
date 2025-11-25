@@ -38,6 +38,7 @@ export default function Deposit() {
 	const [approvalSuccess, setApprovalSuccess] = useState(false);
 	const [countdown, setCountdown] = useState<number>(0);
 	const [countdownMax, setCountdownMax] = useState<number>(30);
+	const [depositAmount, setDepositAmount] = useState<number>(0);
 
 	useEffect(() => {
 		const wallet = wallets && wallets.length > 0 ? wallets[0] : null;
@@ -108,6 +109,7 @@ export default function Deposit() {
 		setDepositError(null);
 		setDepositSuccess(false);
 		setDepositStatus('Depositing...');
+		setDepositAmount(depositAmount);
 		setCountdown(0);
 		try {
 			const wallet = wallets && wallets.length > 0 ? wallets[0] : null;
@@ -184,7 +186,7 @@ export default function Deposit() {
 												setCountdown(0);
 												
 												setApprovalSuccess(true);
-												setDepositStatus('Approval confirmed! Proceeding to deposit...');
+												setDepositStatus('1Approval confirmed! Proceeding to deposit...');
 												setApprovalLoading(false);
 											}
 										} catch (checkErr) {
@@ -225,7 +227,7 @@ export default function Deposit() {
 									if (newAllowance >= amount) {
 										console.log('Approval succeeded despite timeout!');
 										setApprovalSuccess(true);
-										setDepositStatus('Approval confirmed! Proceeding to deposit...');
+										setDepositStatus('2Approval confirmed! Proceeding to deposit...');
 										setApprovalLoading(false);
 										// Skip the rest of approval flow
 										approveTx = null;
@@ -296,7 +298,7 @@ export default function Deposit() {
 								
 								clearTimeout(approvalTimeout);
 								setApprovalSuccess(true);
-								setDepositStatus('Approval confirmed! Proceeding to deposit...');
+								setDepositStatus('3Approval confirmed! Proceeding to deposit...');
 								console.log('Approval status set to confirmed');
 							} catch (waitErr) {
 								console.error('Approval wait error:', waitErr);
@@ -335,28 +337,32 @@ export default function Deposit() {
 					console.log('🔵 Vault contract address:', VAULT_ADDRESS);
 					console.log('🔵 Deposit method exists:', typeof vault.deposit);
 					
-					// Start countdown for deposit
-					setCountdown(30);
-					setCountdownMax(30);
-					const depositCountdownInterval = setInterval(() => {
-						setCountdown(prev => Math.max(0, prev - 1));
-					}, 1000);
-					
-					// Wrap deposit call in a timeout Promise race
-					console.log('🔵 Creating deposit promise...');
-					const depositPromise = vault.deposit(amount, address);
-					console.log('🔵 Deposit promise created:', depositPromise);
-					console.log('🔵 Is it a Promise?', depositPromise instanceof Promise);
-
-					const depositTimeoutPromise = new Promise((_, reject) => {
-						setTimeout(() => reject(new Error('DEPOSIT_CALL_TIMEOUT')), 30000); // 30 second timeout
-					});
-					
-					// Declare interval outside try block so it's accessible in catch
-					let balanceCheckInterval: NodeJS.Timeout | null = null;
-					let depositTx;
-					
 					try {
+						// Start countdown for deposit
+						setCountdown(30);
+						setCountdownMax(30);
+						const depositCountdownInterval = setInterval(() => {
+							setCountdown(prev => Math.max(0, prev - 1));
+						}, 1000);
+						
+						// Wrap deposit call in a timeout Promise race
+						console.log('🔵 Creating deposit promise...');
+						const depositPromise = (async () => {
+						    return await vault.deposit(amount, address);
+						  })();
+						//const depositPromise = vault.deposit(amount, address);
+						console.log('🔵 Deposit promise created:', depositPromise);
+						console.log('🔵 Is it a Promise?', depositPromise instanceof Promise);
+
+						const depositTimeoutPromise = new Promise((_, reject) => {
+							setTimeout(() => reject(new Error('DEPOSIT_CALL_TIMEOUT')), 30000); // 30 second timeout
+						});
+						
+						// Declare interval outside try block so it's accessible in catch
+						let balanceCheckInterval: NodeJS.Timeout | null = null;
+						let depositTx;
+					
+					
 						console.log('🔵 Starting Promise.race for deposit...');
 						
 						// Start periodic balance checks every 5 seconds
@@ -605,6 +611,7 @@ export default function Deposit() {
 			setDepositStatus(errorMsg);
 		} finally {
 			setDepositLoading(false);
+			setDepositAmount(0);
 			setCountdown(0);
 		}
 	}
@@ -639,7 +646,7 @@ export default function Deposit() {
 								opacity: depositLoading || approvalLoading ? 0.6 : 1
 							}}
 						>
-							{depositLoading ? (depositStatus || 'Depositing...') : <>
+							{depositLoading ? ('Depositing...') : <>
 								Deposit $1
 								<span style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
 									<svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -670,7 +677,7 @@ export default function Deposit() {
 								opacity: depositLoading || approvalLoading ? 0.6 : 1
 							}}
 						>
-							{depositLoading ? '' : <>
+							{depositLoading ? ('Depositing...') : <>
 								Deposit $5
 								<span style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
 									<svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -701,7 +708,7 @@ export default function Deposit() {
 								opacity: depositLoading || approvalLoading ? 0.6 : 1
 							}}
 						>
-							{depositLoading ? '' : <>
+							{depositLoading ? ('Depositing...') : <>
 								Deposit $20
 								<span style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
 									<svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -715,50 +722,60 @@ export default function Deposit() {
 			)}
 
 			<div className={`${styles.txDetails} txDetails`}>
-			{/* Countdown Timer with Pie Chart */}
-			{countdown > 0 && (
-				<div className={`${styles.txTimer} txTimer`}>
-					<svg width="40" height="40" viewBox="0 0 40 40" style={{ transform: 'rotate(-90deg)' }}>
-						<circle cx="20" cy="20" r="18" fill="none" stroke="#e0e0e0" strokeWidth="3" />
-						<circle 
-							cx="20" 
-							cy="20" 
-							r="18" 
-							fill="none" 
-							stroke="#4CAF50" 
-							strokeWidth="3"
-							strokeDasharray={`${2 * Math.PI * 18}`}
-							strokeDashoffset={`${2 * Math.PI * 18 * (1 - countdown / countdownMax)}`}
-							style={{ transition: 'stroke-dashoffset 1s linear' }}
-						/>
-						<text 
-							x="20" 
-							y="20" 
-							textAnchor="middle" 
-							dy=".3em" 
-							fill="#333" 
-							fontSize="12" 
-							fontWeight="bold"
-							style={{ transform: 'rotate(90deg)', transformOrigin: 'center' }}
-						>
-							{countdown}s
-						</text>
-					</svg>
-					<div>{ depositSuccess && !depositStatus ? "Deposit successful!" : "Deposit in progress..."}</div>
+
+			{ (depositLoading || depositError || depositSuccess) && (
+				<div className={`${styles.txStatus} txStatus`}>
+					{ depositLoading &&  (
+					<div className={`${styles.txGoal} txGoal`}>
+						Depositing ${depositAmount}...
+					</div>
+					)}
+					<div className={`${styles.txProgress} txProgress`}>
+						{/* Countdown Timer with Pie Chart */}
+						{ countdown > 0  && (
+							<div className={`${styles.txTimer} txTimer`}>
+								<svg width="40" height="40" viewBox="0 0 40 40" style={{ transform: 'rotate(-90deg)' }}>
+									<circle cx="20" cy="20" r="18" fill="none" stroke="#e0e0e0" strokeWidth="3" />
+									<circle 
+										cx="20" 
+										cy="20" 
+										r="18" 
+										fill="none" 
+										stroke="#4CAF50" 
+										strokeWidth="3"
+										strokeDasharray={`${2 * Math.PI * 18}`}
+										strokeDashoffset={`${2 * Math.PI * 18 * (1 - countdown / countdownMax)}`}
+										style={{ transition: 'stroke-dashoffset 1s linear' }}
+									/>
+									<text 
+										x="20" 
+										y="20" 
+										textAnchor="middle" 
+										dy=".3em" 
+										fill="#333" 
+										fontSize="12" 
+										fontWeight="bold"
+										style={{ transform: 'rotate(90deg)', transformOrigin: 'center' }}
+									>
+										{countdown}s
+									</text>
+								</svg>
+							</div>
+						)}
+						{ (!depositSuccess && depositStatus) && (depositStatus) }
+						{ depositSuccess && (<div className={`${styles.txSuccess} txSuccess`}>Deposit successful!</div>) }
+					</div>
 				</div>
 			)}
 
-			{ (approvalLoading || approvalSuccess || depositSuccess) && (
-			<ol>
-				<li>Approve tokens for deposit {approvalLoading&&"⏳"}{(approvalSuccess||depositSuccess)&&"✅"}</li>
-				<li>Deposit tokens {(approvalSuccess&&!depositSuccess)&&"⏳"}{depositSuccess&&"✅"}</li>
-			</ol>
+			{ (approvalLoading || approvalSuccess) && !depositSuccess && (
+				<ol>
+					<li>Approve tokens for deposit {approvalLoading&&"⏳"}{(approvalSuccess||depositSuccess)&&"✅"}</li>
+					<li>Deposit tokens {(approvalSuccess&&!depositSuccess)&&"⏳"}{depositSuccess&&"✅"}</li>
+				</ol>
 			)}
 
-			{depositStatus && <div style={{ color: depositSuccess ? 'green' : 'red', whiteSpace: 'pre-line' }}>{depositStatus}</div>}
-			{depositSuccess && !depositStatus && (
-				<div style={{ color: 'green' }}>Deposit successful!</div>
-			)}
+			
 			</div>
 
 			{vaultBalance !== null && vaultBalance !== 0 && (

@@ -41,12 +41,14 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
     const [withdrawSuccess, setWithdrawSuccess] = useState(false);
     const [countdown, setCountdown] = useState<number>(0);
     const [countdownMax, setCountdownMax] = useState<number>(30);
+    const [withdrawAmount, setWithdrawAmount] = useState<number>(0);
 
     async function handleWithdraw(withdrawAmount?: number) {
     setWithdrawLoading(true);
     setWithdrawStatus('Preparing withdrawal...');
     setWithdrawSuccess(false);
     setCountdown(0);
+    setWithdrawAmount(withdrawAmount);
     try {
             const wallet = wallets && wallets.length > 0 ? wallets[0] : null;
             if (!wallet) throw new Error('No wallet found');
@@ -356,51 +358,50 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
         <div style={{ display: 'flex', flexDirection: 'column'}}>
             
             <div className={`${styles.txDetails} txDetails`}>
-            {/* Countdown Timer with Pie Chart */}
-            {countdown > 0 && (
-                <div className={`${styles.txTimer} txTimer`}>
-                    <svg width="40" height="40" viewBox="0 0 40 40" style={{ transform: 'rotate(-90deg)' }}>
-                        <circle cx="20" cy="20" r="18" fill="none" stroke="#e0e0e0" strokeWidth="3" />
-                        <circle 
-                            cx="20" 
-                            cy="20" 
-                            r="18" 
-                            fill="none" 
-                            stroke="#FF9800" 
-                            strokeWidth="3"
-                            strokeDasharray={`${2 * Math.PI * 18}`}
-                            strokeDashoffset={`${2 * Math.PI * 18 * (1 - countdown / countdownMax)}`}
-                            style={{ transition: 'stroke-dashoffset 1s linear' }}
-                        />
-                        <text 
-                            x="20" 
-                            y="20" 
-                            textAnchor="middle" 
-                            dy=".3em" 
-                            fill="#333" 
-                            fontSize="12" 
-                            fontWeight="bold"
-                            style={{ transform: 'rotate(90deg)', transformOrigin: 'center' }}
-                        >
-                            {countdown}s
-                        </text>
-                    </svg>
-                    <span>{ withdrawSuccess && !withdrawStatus ? "Withdraw successful!" : "Withdraw in progress..."}</span>
+
+            { (withdrawLoading || withdrawSuccess || withdrawStatus) && (
+                <div className={`${styles.txStatus} txStatus`}>
+                    { withdrawLoading &&  (
+                    <div className={`${styles.txGoal} txGoal`}>
+                        Withdrawing ${withdrawAmount}...
+                    </div>
+                    )}
+                    <div className={`${styles.txProgress} txProgress`}>
+                        {/* Countdown Timer with Pie Chart */}
+                        { countdown > 0  && (
+                            <div className={`${styles.txTimer} txTimer`}>
+                                <svg width="40" height="40" viewBox="0 0 40 40" style={{ transform: 'rotate(-90deg)' }}>
+                                    <circle cx="20" cy="20" r="18" fill="none" stroke="#e0e0e0" strokeWidth="3" />
+                                    <circle 
+                                        cx="20" 
+                                        cy="20" 
+                                        r="18" 
+                                        fill="none" 
+                                        stroke="#4CAF50" 
+                                        strokeWidth="3"
+                                        strokeDasharray={`${2 * Math.PI * 18}`}
+                                        strokeDashoffset={`${2 * Math.PI * 18 * (1 - countdown / countdownMax)}`}
+                                        style={{ transition: 'stroke-dashoffset 1s linear' }}
+                                    />
+                                    <text 
+                                        x="20" 
+                                        y="20" 
+                                        textAnchor="middle" 
+                                        dy=".3em" 
+                                        fill="#333" 
+                                        fontSize="12" 
+                                        fontWeight="bold"
+                                        style={{ transform: 'rotate(90deg)', transformOrigin: 'center' }}
+                                    >
+                                        {countdown}s
+                                    </text>
+                                </svg>
+                            </div>
+                        )}
+                        { (!withdrawSuccess && withdrawStatus) && (withdrawStatus) }
+                        { withdrawSuccess && (<div className={`${styles.txSuccess} txSuccess`}>Withdraw successful!</div>) }
+                    </div>
                 </div>
-            )}
-            
-            {withdrawStatus && (
-                <div style={{
-                    color:
-                        withdrawStatus.includes('successful') ? 'green'
-                        : withdrawStatus.includes('Waiting') || withdrawStatus.includes('Preparing') || withdrawStatus.includes('Sending') ? '#888'
-                        : 'red',
-                    marginBottom: '0.5em',
-                    whiteSpace: 'pre-line'
-                }}>{withdrawStatus}</div>
-            )}
-            {withdrawSuccess && !withdrawStatus && (
-                <div style={{ color: 'green' }}>Withdraw successful!</div>
             )}
             </div>
             
@@ -427,7 +428,7 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                             opacity: withdrawLoading ? 0.6 : 1
                         }}
                     >
-                        {withdrawLoading ? (withdrawStatus || 'Withdrawing...') : <>
+                        {withdrawLoading ? 'Withdrawing...' : <>
                             Withdraw ${vaultBalance < 5 ? '1' : vaultBalance < 20 ? '5' : '20'}
                             <span style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
                                 <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -458,7 +459,7 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                             opacity: withdrawLoading ? 0.6 : 1
                         }}
                     >
-                        {withdrawLoading ? '' : <>
+                        {withdrawLoading ? 'Withdrawing...' : <>
                             Withdraw All (${vaultBalance?.toFixed(2)})
                             <span style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
                                 <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
