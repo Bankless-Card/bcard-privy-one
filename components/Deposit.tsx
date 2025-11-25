@@ -1,6 +1,6 @@
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import React, { useEffect, useState } from 'react';
-import { Contract, formatUnits, BrowserProvider } from 'ethers';
+import { Contract, formatUnits, BrowserProvider, JsonRpcProvider } from 'ethers';
 
 import styles from './Deposit.module.css';
 import Withdraw from './Withdraw';
@@ -24,7 +24,9 @@ export default function Deposit() {
 		// balanceOf function
 		{ "inputs": [
 			{ "internalType": "address", "name": "account", "type": "address" }
-		], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }
+		], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" },
+		// totalDebt function
+		{ "inputs": [], "name": "totalDebt", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }
 	];
 	const [usdcBalance, setUsdcBalance] = useState<number | null>(null);
 	const [vaultBalance, setVaultBalance] = useState<number | null>(null);
@@ -39,6 +41,30 @@ export default function Deposit() {
 	const [countdown, setCountdown] = useState<number>(0);
 	const [countdownMax, setCountdownMax] = useState<number>(30);
 	const [depositAmount, setDepositAmount] = useState<number>(0);
+	const [totalDebt, setTotalDebt] = useState<number | null>(null);
+
+	useEffect(() => {
+		async function fetchPublicData() {
+			try {
+				const publicProvider = new JsonRpcProvider('https://mainnet.base.org');
+				const vault = new Contract(VAULT_ADDRESS, VAULT_ABI, publicProvider);
+
+				if (typeof vault.totalDebt === 'function') {
+					const debt = await vault.totalDebt();
+					setTotalDebt(Number(formatUnits(debt, 6))); // Assuming 6 decimals
+				} else {
+					setTotalDebt(0);
+				}
+			} catch (err) {
+				console.error('Failed to fetch total debt:', err);
+				setTotalDebt(0);
+			}
+		}
+
+		if (ready) {
+			fetchPublicData();
+		}
+	}, [ready]);
 
 	useEffect(() => {
 		const wallet = wallets && wallets.length > 0 ? wallets[0] : null;
@@ -97,10 +123,14 @@ export default function Deposit() {
 
 	if (!authenticated) {
 		return (
-			<div>
-				<p>Please log in to deposit.</p>
-				<button onClick={login}>Log in</button>
-			</div>
+			<div className={`${styles.vaultWidget} vaultWidget`}>
+                <div className={`${styles.vaultBalance} vaultBalances`}>
+                    <div>
+                        Total Vault Deposits: {totalDebt === null ? 'Loading...' : `$${Number(totalDebt.toFixed(2)).toLocaleString('en-US')}`}
+                    </div>
+                	<strong>Log in to deposit.</strong>
+                </div>	
+            </div>
 		);
 	}
 
@@ -619,9 +649,16 @@ export default function Deposit() {
 	return (
 		<div className={`${styles.vaultWidget} vaultWidget`}>
 
+			<div className={`${styles.vaultBalance} vaultBalances`}>
+                <div>
+                    Total Vault Deposits: {totalDebt === null ? 'Loading...' : `$${Number(totalDebt.toFixed(2)).toLocaleString('en-US')}`}
+                </div>
+            </div>	
+
 			<div className={`${styles.balances} balances`}>
-				<div className={`${styles.tokenBalance} tokenBalance`}>{vaultBalance === null ? 'Loading...' : `$${vaultBalance.toFixed(2)}`} deposited</div>
-				<div className={`${styles.tokenBalance} tokenBalance`}>{usdcBalance === null ? 'Loading...' : `$${usdcBalance.toFixed(2)}`} available to deposit</div>
+				<strong>You have...</strong>
+				<div className={`${styles.tokenBalance} tokenBalance`}>{vaultBalance === null ? 'Loading...' : `$${Number(vaultBalance.toFixed(2)).toLocaleString('en-US')}`} deposited</div>
+				<div className={`${styles.tokenBalance} tokenBalance`}>{usdcBalance === null ? 'Loading...' : `$${Number(usdcBalance.toFixed(2)).toLocaleString('en-US')}`} available to deposit</div>
 			</div>
 			
 			{usdcBalance !== null && usdcBalance > 0 && ethBalance !== null && ethBalance > 0 && (
