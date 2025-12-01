@@ -367,11 +367,16 @@ export default function Deposit() {
 					console.log('🔵 Vault contract address:', VAULT_ADDRESS);
 					console.log('🔵 Deposit method exists:', typeof vault.deposit);
 					
+					// Declare variables so they're visible to both try/catch and post-try logic
+					let balanceCheckInterval: NodeJS.Timeout | null = null;
+					let depositCountdownInterval: NodeJS.Timeout | null = null;
+					let depositTx: any = null;
+					
 					try {
 						// Start countdown for deposit
 						setCountdown(30);
 						setCountdownMax(30);
-						const depositCountdownInterval = setInterval(() => {
+						depositCountdownInterval = setInterval(() => {
 							setCountdown(prev => Math.max(0, prev - 1));
 						}, 1000);
 						
@@ -388,11 +393,6 @@ export default function Deposit() {
 							setTimeout(() => reject(new Error('DEPOSIT_CALL_TIMEOUT')), 30000); // 30 second timeout
 						});
 						
-						// Declare interval outside try block so it's accessible in catch
-						let balanceCheckInterval: NodeJS.Timeout | null = null;
-						let depositTx;
-					
-					
 						console.log('🔵 Starting Promise.race for deposit...');
 						
 						// Start periodic balance checks every 5 seconds
@@ -408,7 +408,10 @@ export default function Deposit() {
 											console.log('✅ Deposit detected via periodic check!');
 											
 											if (balanceCheckInterval) clearInterval(balanceCheckInterval);
-											clearInterval(depositCountdownInterval);
+											if (depositCountdownInterval) {
+												clearInterval(depositCountdownInterval);
+												depositCountdownInterval = null;
+											}
 											setCountdown(0);
 											
 											// Update balances
@@ -445,7 +448,10 @@ export default function Deposit() {
 						if (balanceCheckInterval) clearInterval(balanceCheckInterval);
 						
 						console.log('🔵 Promise.race resolved!');
-						clearInterval(depositCountdownInterval);
+						if (depositCountdownInterval) {
+							clearInterval(depositCountdownInterval);
+							depositCountdownInterval = null;
+						}
 						setCountdown(0);
 						console.log('🔵 Deposit tx returned:', depositTx);
 						console.log('🔵 Deposit tx hash:', depositTx?.hash);
@@ -458,7 +464,10 @@ export default function Deposit() {
 						
 						// Clean up intervals
 						if (balanceCheckInterval) clearInterval(balanceCheckInterval);
-						clearInterval(depositCountdownInterval);
+						if (depositCountdownInterval) {
+							clearInterval(depositCountdownInterval);
+							depositCountdownInterval = null;
+						}
 						setCountdown(0);
 						
 						// Check if this is a contract revert (not a timeout)
