@@ -245,8 +245,8 @@ a:hover {
 
 /* Button Overrides */
 .bf-theme .SecondaryButton {
-  background: linear-gradient(to right, --theme-background, #4C4BAA);
-  color: white;
+  /*background: linear-gradient(to right, --theme-background, #4C4BAA);
+  color: white;*/
 }
 
 

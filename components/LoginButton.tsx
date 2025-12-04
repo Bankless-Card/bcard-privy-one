@@ -31,7 +31,7 @@ export default function LoginButton() {
   if (showLogout) {
     let buttonText = user?.email?.address+" Logout";
     return(
-      <Button enabled={true} buttonFunction={logout} buttonText={buttonText} />
+      <Button buttonFunction={logout} buttonText={buttonText} />
     )
   }
 

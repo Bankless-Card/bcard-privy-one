@@ -655,6 +655,16 @@ export default function Deposit() {
 		}
 	}
 
+
+	async function newHandleDeposit(amount: number) {
+		setDepositLoading(true);
+		setDepositError(null);
+
+		
+
+		setDepositLoading(false);		
+	}
+
 	return (
 		<div className={`${styles.vaultWidget} vaultWidget`}>
 
@@ -683,8 +693,8 @@ export default function Deposit() {
 								gap: '0.5em',
 								padding: '0.75em 1em',
 								borderRadius: '8px',
-								border: '1px solid #ddd',
-								background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+								border: '1px solid #fff',
+								background: '#D85AB0',
 								color: 'white',
 								cursor: depositLoading || approvalLoading ? 'not-allowed' : 'pointer',
 								fontWeight: 'bold',
@@ -715,7 +725,7 @@ export default function Deposit() {
 								padding: '0.75em 1em',
 								borderRadius: '8px',
 								border: '1px solid #ddd',
-								background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+								background: '#D85AB0',
 								color: 'white',
 								cursor: depositLoading || approvalLoading ? 'not-allowed' : 'pointer',
 								fontWeight: 'bold',
