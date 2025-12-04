@@ -1,5 +1,3 @@
-/* Black Flag Theme - Inspired by https://blackflag-test.vercel.app/ */
-
 :root {
   /* Color palette */
   --theme-background: #57BCF2;  
@@ -211,12 +209,13 @@ a:hover {
 }
 
 /* Buttons */
-.bf-button {
+.bf-theme .Button {
   display: inline-block;
-  background-color: transparent;
-  color: var(--theme-text);
+  background: var(--theme-text);
+  color: var(--theme-background);
   border: 1px solid var(--theme-text);
   padding: 0.75rem 1.5rem;
+  font-family: var(--theme-font-primary);
   font-size: 1rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -226,9 +225,13 @@ a:hover {
   text-decoration: none;
 }
 
-.bf-button:hover {
-  background-color: var(--theme-text);
-  color: var(--theme-background);
+.bf-theme .Button:hover {
+  background-color: transparent;
+  color: var(--theme-text);
+}
+
+.bf-theme .Button:active {
+  text-decoration: none;
 }
 
 /* Panels/Cards */

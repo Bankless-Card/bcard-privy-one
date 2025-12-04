@@ -1,8 +1,8 @@
-import styles from './LoginButton.module.css';
 import { useLogin, useLogout, usePrivy } from "@privy-io/react-auth";
 import { useRouter } from "next/router";
 import { getRoute } from "../utils/routes";
 import { useEffect, useState } from "react";
+import Button from './Button';
 
 export default function LoginButton() {
   const router = useRouter();
@@ -29,23 +29,14 @@ export default function LoginButton() {
   }, [ready, authenticated]);
 
   if (showLogout) {
-    return (
-      <button
-          className={styles.button}
-          onClick={logout}
-        >
-          {user?.email?.address} Logout
-      </button>
-    );
+    let buttonText = user?.email?.address+" Logout";
+    return(
+      <Button enabled={true} buttonFunction={logout} buttonText={buttonText} />
+    )
   }
 
-  return (
-    <button
-        className={styles.button}
-        onClick={login}
-      >
-        Login
-    </button>
-  );
+  return(
+    <Button buttonFunction={login} buttonText="Login" />
+  )
 
 }

@@ -23,11 +23,14 @@ export default function Button({
 }: ButtonProps) {
 
   let classes = [styles.Button, className].join(" ");
+  let textClasses = className+" Button"
   if (enabled == false) {
     classes = [styles.Button, styles.DisabledButton, className].join(" ");
+    textClasses = className+" Button DisabledButton";
   }
   if (secondary) {
     classes = [styles.Button, styles.SecondaryButton, className].join(" ");
+    textClasses = className+" Button SecondaryButton";
   }
 
   function RenderLoadingSpinner() {
@@ -40,21 +43,21 @@ export default function Button({
 
   if (enabled == false) {
     return (
-      <a className={classes} href="#">
+      <button className={classes+' '+textClasses} href="#" disabled={true} >
         <RenderLoadingSpinner /> {buttonText}
-      </a>
+      </button>
     );
   } else if (buttonFunction != null) {
     return (
-      <a className={classes} onClick={buttonFunction} href="#">
+      <button className={classes+' '+textClasses} onClick={buttonFunction} href="#">
         {buttonText}
-      </a>
+      </button>
     );
   } else {
     return (
-      <a className={classes} href={buttonHref}>
+      <button className={classes+' '+textClasses} href={buttonHref}>
         {buttonText}
-      </a>
+      </button>
     );
   }
 }
