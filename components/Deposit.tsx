@@ -1,5 +1,5 @@
 import { usePrivy, useWallets } from '@privy-io/react-auth';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Contract, formatUnits, BrowserProvider, JsonRpcProvider } from 'ethers';
 
 import styles from './Deposit.module.css';
@@ -8,8 +8,8 @@ import Withdraw from './Withdraw';
 
 export default function Deposit() {
 	const { ready, authenticated, login } = usePrivy();
-    const { wallets } = useWallets();
-    
+	const { wallets } = useWallets();
+	
 	const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'; // USDC on Base
 	const USDC_ABI = [
 		"function balanceOf(address owner) view returns (uint256)"
@@ -43,28 +43,82 @@ export default function Deposit() {
 	const [depositAmount, setDepositAmount] = useState<number>(0);
 	const [totalDebt, setTotalDebt] = useState<number | null>(null);
 
-	useEffect(() => {
-		async function fetchPublicData() {
-			try {
-				const publicProvider = new JsonRpcProvider('https://mainnet.base.org');
-				const vault = new Contract(VAULT_ADDRESS, VAULT_ABI, publicProvider);
+	//useMemo provider and vault to debounce requests on component re-render
+	const provider = useMemo(
+	  () => new JsonRpcProvider('https://mainnet.base.org'),
+	  []
+	);
 
-				if (typeof vault.totalDebt === 'function') {
-					const debt = await vault.totalDebt();
-					setTotalDebt(Number(formatUnits(debt, 6))); // Assuming 6 decimals
-				} else {
-					setTotalDebt(0);
+	const vault = useMemo(
+	  () => new Contract(VAULT_ADDRESS, VAULT_ABI, provider),
+	  [provider]
+	);
+
+	const DEBT_STORAGE_KEY = 'vault:totalDebt';
+	const TTL_MS = 30_000;
+
+	function getCachedDebt() {
+		try {
+			const raw = localStorage.getItem(DEBT_STORAGE_KEY);
+			if (!raw) return null;
+
+			const { value, ts } = JSON.parse(raw);
+			if (Date.now() - ts > TTL_MS) return null;
+
+			return value;
+		} catch {
+			return null;
+		}
+	}
+
+	function setCachedDebt(value) {
+		try {
+			localStorage.setItem(
+				DEBT_STORAGE_KEY,
+				JSON.stringify({ value, ts: Date.now() })
+			);
+		} catch {
+			// ignore quota / private mode errors
+		}
+	}
+
+	useEffect(() => {
+		if (!ready) return;
+
+		//try cache first
+		const cached = getCachedDebt();
+		if (cached !== null) {
+			setTotalDebt(cached);
+			return;
+		}
+
+		//use cancelled var to avoid re-setting state on multiple runs
+		let cancelled = false;
+
+		(async () => {
+			try {
+				const debt = await vault.totalDebt.staticCall();
+				const value = Number(formatUnits(debt, 6));
+
+				if (!cancelled) {
+					setTotalDebt(value);
+					setCachedDebt(value);
 				}
 			} catch (err) {
-				console.error('Failed to fetch total debt:', err);
-				setTotalDebt(0);
+				if (!cancelled) {
+					console.error('Failed to fetch total debt:', err);
+					setTotalDebt(0);
+				}
 			}
-		}
+		})();
 
-		if (ready) {
-			fetchPublicData();
-		}
+		//useEffect cleanup function
+		return () => {
+			cancelled = true;
+		};
 	}, [ready]);
+
+
 
 	useEffect(() => {
 		const wallet = wallets && wallets.length > 0 ? wallets[0] : null;
@@ -124,13 +178,13 @@ export default function Deposit() {
 	if (!authenticated) {
 		return (
 			<div className={`${styles.vaultWidget} vaultWidget`}>
-                <div className={`${styles.vaultBalance} vaultBalances`}>
-                    <div>
-                        Total Vault Deposits: {totalDebt === null ? 'Loading...' : `$${Number(totalDebt.toFixed(2)).toLocaleString('en-US')}`}
-                    </div>
-                	<strong>Log in to deposit.</strong>
-                </div>	
-            </div>
+				<div className={`${styles.vaultBalance} vaultBalances`}>
+					<div>
+						Total Vault Deposits: {totalDebt === null ? 'Loading...' : `$${Number(totalDebt.toFixed(2)).toLocaleString('en-US')}`}
+					</div>
+					<strong>Log in to deposit.</strong>
+				</div>	
+			</div>
 		);
 	}
 
@@ -383,7 +437,7 @@ export default function Deposit() {
 						// Wrap deposit call in a timeout Promise race
 						console.log('🔵 Creating deposit promise...');
 						const depositPromise = (async () => {
-						    return await vault.deposit(amount, address);
+							return await vault.deposit(amount, address);
 						  })();
 						//const depositPromise = vault.deposit(amount, address);
 						console.log('🔵 Deposit promise created:', depositPromise);
@@ -669,10 +723,10 @@ export default function Deposit() {
 		<div className={`${styles.vaultWidget} vaultWidget`}>
 
 			<div className={`${styles.vaultBalance} vaultBalances`}>
-                <div>
-                    Total Vault Deposits: {totalDebt === null ? 'Loading...' : `$${Number(totalDebt.toFixed(2)).toLocaleString('en-US')}`}
-                </div>
-            </div>	
+				<div>
+					Total Vault Deposits: {totalDebt === null ? 'Loading...' : `$${Number(totalDebt.toFixed(2)).toLocaleString('en-US')}`}
+				</div>
+			</div>	
 
 			<div className={`${styles.balances} balances`}>
 				<strong>You have...</strong>
