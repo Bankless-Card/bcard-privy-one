@@ -221,6 +221,58 @@ export default function Deposit() {
 		);
 	}
 
+	// Refresh balances with retries for RPC sync
+	async function refreshBalancesWithRetry(
+		vaultContract: Contract,
+		usdcContract: Contract,
+		userAddress: string,
+		previousUsdcBalance: number,
+		depositedAmount: number,
+		maxRetries: number = 5,
+		delayMs: number = 2000
+	): Promise<void> {
+		const expectedUsdcBalance = previousUsdcBalance - depositedAmount;
+
+		for (let attempt = 1; attempt <= maxRetries; attempt++) {
+			console.log(`🔍 Balance refresh attempt ${attempt}/${maxRetries}...`);
+
+			// Fetch new balances
+			const newVaultBalance = await vaultContract.balanceOf(userAddress);
+			const newVaultBalanceNum = Number(formatUnits(newVaultBalance, 6));
+
+			const newUsdcBalanceRaw = await usdcContract.balanceOf(userAddress);
+			const newUsdcBalance = Number(formatUnits(newUsdcBalanceRaw, 6));
+
+			console.log('Balance check:', {
+				previousUsdc: previousUsdcBalance,
+				newUsdc: newUsdcBalance,
+				expectedUsdc: expectedUsdcBalance,
+				newVault: newVaultBalanceNum,
+				synced: newUsdcBalance <= expectedUsdcBalance
+			});
+
+			// Check if balance decreased (deposit was processed)
+			if (newUsdcBalance <= expectedUsdcBalance) {
+				console.log('✅ Balances synced successfully');
+				setVaultBalance(newVaultBalanceNum);
+				setUsdcBalance(newUsdcBalance);
+				return;
+			}
+
+			if (attempt < maxRetries) {
+				console.log(`⏳ Waiting ${delayMs}ms for balance sync...`);
+				await new Promise(resolve => setTimeout(resolve, delayMs));
+			}
+		}
+
+		console.warn('⚠️ Balance sync timed out, but deposit succeeded. Refreshing balances with current values anyway.');
+		// Even if we timeout, update with latest values
+		const finalVaultBalance = await vaultContract.balanceOf(userAddress);
+		const finalUsdcBalance = await usdcContract.balanceOf(userAddress);
+		setVaultBalance(Number(formatUnits(finalVaultBalance, 6)));
+		setUsdcBalance(Number(formatUnits(finalUsdcBalance, 6)));
+	}
+
 	async function handleDeposit(depositAmount?: number) {
 		setDepositLoading(true);
 		setDepositError(null);
@@ -512,28 +564,33 @@ export default function Deposit() {
 										
 										if (currentVaultBalanceNum > (vaultBalance || 0)) {
 											console.log('✅ Deposit detected via periodic check!');
-											
+
 											if (balanceCheckInterval) clearInterval(balanceCheckInterval);
 											if (depositCountdownInterval) {
 												clearInterval(depositCountdownInterval);
 												depositCountdownInterval = null;
 											}
 											setCountdown(0);
-											
-											// Update balances
-											setVaultBalance(currentVaultBalanceNum);
+
+											// Update balances with retry logic
+											setDepositStatus('Deposit successful! Updating balances...');
 											const usdc = new Contract(USDC_ADDRESS, USDC_ABI, provider);
-											if (typeof usdc.balanceOf === 'function') {
-												const balance = await usdc.balanceOf(address);
-												const newUsdcBalance = Number(formatUnits(balance, 6));
-												console.log('Updated USDC balance:', newUsdcBalance);
-												setUsdcBalance(newUsdcBalance);
+											try {
+												await refreshBalancesWithRetry(vault, usdc, address, usdcBalance!, amountToDeposit, 5, 2000);
+											} catch (balanceErr) {
+												console.error('Balance refresh error:', balanceErr);
+												// Fallback to direct update
+												setVaultBalance(currentVaultBalanceNum);
+												if (typeof usdc.balanceOf === 'function') {
+													const balance = await usdc.balanceOf(address);
+													setUsdcBalance(Number(formatUnits(balance, 6)));
+												}
 											}
-											
+
 											setDepositSuccess(true);
 											setDepositStatus('Deposit successful!');
 											setDepositLoading(false);
-											
+
 											setTimeout(() => {
 												setDepositStatus(null);
 											}, 5000);
@@ -606,14 +663,19 @@ export default function Deposit() {
 								console.log('Vault balance after timeout:', newVaultBalanceNum, 'Previous:', vaultBalance);
 								if (newVaultBalanceNum > (vaultBalance || 0)) {
 									console.log('Deposit succeeded despite timeout!');
-									setVaultBalance(newVaultBalanceNum);
-									// Update USDC balance
+									// Update USDC balance with retry logic
+									setDepositStatus('Deposit successful! Updating balances...');
 									const usdc = new Contract(USDC_ADDRESS, USDC_ABI, provider);
-									if (typeof usdc.balanceOf === 'function') {
-										const balance = await usdc.balanceOf(address);
-										const newUsdcBalance = Number(formatUnits(balance, 6));
-										console.log('Updated USDC balance:', newUsdcBalance);
-										setUsdcBalance(newUsdcBalance);
+									try {
+										await refreshBalancesWithRetry(vault, usdc, address, usdcBalance!, amountToDeposit, 5, 2000);
+									} catch (balanceErr) {
+										console.error('Balance refresh error:', balanceErr);
+										// Fallback to direct update
+										setVaultBalance(newVaultBalanceNum);
+										if (typeof usdc.balanceOf === 'function') {
+											const balance = await usdc.balanceOf(address);
+											setUsdcBalance(Number(formatUnits(balance, 6)));
+										}
 									}
 									setDepositSuccess(true);
 									setDepositStatus('Deposit successful!');
@@ -686,22 +748,16 @@ export default function Deposit() {
 							confirmations: await receipt.confirmations()
 						});
 						setDepositSuccess(true);
-						setDepositStatus('Deposit successful!');
+						setDepositStatus('Deposit successful! Updating balances...');
 						console.log('Deposit status set to successful');
-						// Update vault balance and USDC balance
-						if (typeof vault.balanceOf === 'function') {
-							const newVaultBalance = await vault.balanceOf(address);
-							const newVaultBalanceNum = Number(formatUnits(newVaultBalance, 6));
-							console.log('Updated vault balance:', newVaultBalanceNum);
-							setVaultBalance(newVaultBalanceNum);
-						}
-						// Update USDC balance
+						// Update vault balance and USDC balance with retry logic
 						const usdc = new Contract(USDC_ADDRESS, USDC_ABI, provider);
-						if (typeof usdc.balanceOf === 'function') {
-							const balance = await usdc.balanceOf(address);
-							const newUsdcBalance = Number(formatUnits(balance, 6));
-							console.log('Updated USDC balance:', newUsdcBalance);
-							setUsdcBalance(newUsdcBalance);
+						try {
+							await refreshBalancesWithRetry(vault, usdc, address, usdcBalance!, amountToDeposit, 5, 2000);
+							setDepositStatus('Deposit successful!');
+						} catch (balanceErr) {
+							console.error('Balance refresh error:', balanceErr);
+							setDepositStatus('Deposit successful! (Balances may take a moment to update)');
 						}
 						// Reset status after 5 seconds
 						setTimeout(() => {
