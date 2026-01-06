@@ -183,8 +183,41 @@ export default function Deposit() {
 						Total Vault Deposits: {totalDebt === null ? 'Loading...' : `$${Number(totalDebt.toFixed(2)).toLocaleString('en-US')}`}
 					</div>
 					<strong>Log in to deposit.</strong>
-				</div>	
+				</div>
 			</div>
+		);
+	}
+
+	// Verify allowance after approval with retries for RPC sync
+	async function verifyAllowanceWithRetry(
+		usdcContract: Contract,
+		ownerAddress: string,
+		spenderAddress: string,
+		requiredAmount: bigint,
+		maxRetries: number = 5,
+		delayMs: number = 2000
+	): Promise<void> {
+		for (let attempt = 1; attempt <= maxRetries; attempt++) {
+			const currentAllowance = await usdcContract.allowance(ownerAddress, spenderAddress);
+			console.log(`🔍 Allowance verification attempt ${attempt}/${maxRetries}:`, {
+				currentAllowance: currentAllowance.toString(),
+				requiredAmount: requiredAmount.toString(),
+				sufficient: currentAllowance >= requiredAmount
+			});
+
+			if (currentAllowance >= requiredAmount) {
+				console.log('✅ Allowance verified successfully');
+				return;
+			}
+
+			if (attempt < maxRetries) {
+				console.log(`⏳ Waiting ${delayMs}ms for RPC to sync...`);
+				await new Promise(resolve => setTimeout(resolve, delayMs));
+			}
+		}
+
+		throw new Error(
+			'Allowance verification failed after approval. The approval succeeded on-chain, but RPC nodes are not synced yet. Please wait 10 seconds and try depositing again (approval is already done, so it will skip to deposit).'
 		);
 	}
 
@@ -310,11 +343,16 @@ export default function Deposit() {
 									console.log('New allowance after timeout:', newAllowance.toString());
 									if (newAllowance >= amount) {
 										console.log('Approval succeeded despite timeout!');
-										setApprovalSuccess(true);
-										setDepositStatus('2Approval confirmed! Proceeding to deposit...');
-										setApprovalLoading(false);
-										// Skip the rest of approval flow
-										approveTx = null;
+										// Verify the allowance before proceeding
+										try {
+											await verifyAllowanceWithRetry(usdcERC20, address, VAULT_ADDRESS, amount);
+											setApprovalSuccess(true);
+											setDepositStatus('2Approval confirmed! Proceeding to deposit...');
+											setApprovalLoading(false);
+											approveTx = null;
+										} catch (verifyErr) {
+											throw new Error('Approval succeeded but network sync is delayed. Please try again in 10 seconds.');
+										}
 									} else {
 										throw new Error('Approval transaction call timed out. Please try again or check your wallet.');
 									}
@@ -384,6 +422,20 @@ export default function Deposit() {
 								setApprovalSuccess(true);
 								setDepositStatus('3Approval confirmed! Proceeding to deposit...');
 								console.log('Approval status set to confirmed');
+
+								// Verify allowance is synced across RPC nodes before proceeding
+								console.log('🔍 Verifying allowance is synced before deposit...');
+								setDepositStatus('Verifying approval on network...');
+								try {
+									await verifyAllowanceWithRetry(usdcERC20, address, VAULT_ADDRESS, amount);
+									setDepositStatus('Approval verified! Proceeding to deposit...');
+								} catch (verifyErr: any) {
+									console.error('Allowance verification failed:', verifyErr);
+									setDepositStatus('Approval completed but network sync delayed. Please try again in a moment.');
+									setApprovalLoading(false);
+									setDepositLoading(false);
+									throw verifyErr;
+								}
 							} catch (waitErr) {
 								console.error('Approval wait error:', waitErr);
 								clearTimeout(approvalTimeout);
