@@ -38,18 +38,74 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
     const { wallets } = useWallets();
     const [withdrawLoading, setWithdrawLoading] = useState(false);
     const [withdrawStatus, setWithdrawStatus] = useState<string | null>(null);
+    const [withdrawError, setWithdrawError] = useState<string | null>(null);
     const [withdrawSuccess, setWithdrawSuccess] = useState(false);
     const [countdown, setCountdown] = useState<number>(0);
     const [countdownMax, setCountdownMax] = useState<number>(30);
     const [withdrawAmount, setWithdrawAmount] = useState<number>(0);
 
+    // Refresh balances with retries for RPC sync (adapted for withdraw: USDC increases)
+    async function refreshBalancesWithRetry(
+        vaultContract: Contract,
+        usdcContract: Contract,
+        userAddress: string,
+        previousUsdcBalance: number,
+        withdrawnAmount: number,
+        maxRetries: number = 5,
+        delayMs: number = 2000
+    ): Promise<void> {
+        const expectedUsdcBalance = previousUsdcBalance + withdrawnAmount;
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            console.log(`🔍 Balance refresh attempt ${attempt}/${maxRetries}...`);
+
+            // Fetch new balances
+            const newVaultBalance = await vaultContract.balanceOf(userAddress);
+            const newVaultBalanceNum = Number(formatUnits(newVaultBalance, 6));
+
+            const newUsdcBalanceRaw = await usdcContract.balanceOf(userAddress);
+            const newUsdcBalance = Number(formatUnits(newUsdcBalanceRaw, 6));
+
+            console.log('Balance check:', {
+                previousUsdc: previousUsdcBalance,
+                newUsdc: newUsdcBalance,
+                expectedUsdc: expectedUsdcBalance,
+                newVault: newVaultBalanceNum,
+                synced: newUsdcBalance >= expectedUsdcBalance
+            });
+
+            // Check if balance increased (withdraw was processed)
+            if (newUsdcBalance >= expectedUsdcBalance) {
+                console.log('✅ Balances synced successfully');
+                setVaultBalance(newVaultBalanceNum);
+                setUsdcBalance(newUsdcBalance);
+                return;
+            }
+
+            if (attempt < maxRetries) {
+                console.log(`⏳ Waiting ${delayMs}ms for balance sync...`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+        }
+
+        console.warn('⚠️ Balance sync timed out, but withdraw succeeded. Refreshing balances with current values anyway.');
+        // Even if we timeout, update with latest values
+        const finalVaultBalance = await vaultContract.balanceOf(userAddress);
+        const finalUsdcBalance = await usdcContract.balanceOf(userAddress);
+        setVaultBalance(Number(formatUnits(finalVaultBalance, 6)));
+        setUsdcBalance(Number(formatUnits(finalUsdcBalance, 6)));
+    }
+
     async function handleWithdraw(withdrawAmount?: number) {
-    setWithdrawLoading(true);
-    setWithdrawStatus('Preparing withdrawal...');
-    setWithdrawSuccess(false);
-    setCountdown(0);
-    setWithdrawAmount(withdrawAmount);
-    try {
+        // Wrap everything in try-catch to ensure NO errors escape to Next.js error boundary
+        try {
+            setWithdrawLoading(true);
+            setWithdrawStatus('Preparing withdrawal...');
+            setWithdrawError(null);
+            setWithdrawSuccess(false);
+            setCountdown(0);
+            setWithdrawAmount(withdrawAmount);
+        try {
             const wallet = wallets && wallets.length > 0 ? wallets[0] : null;
             if (!wallet) throw new Error('No wallet found');
             const privyProvider = await wallet.getEthereumProvider();
@@ -123,25 +179,30 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                                         
                                         if (currentVaultBalanceNum < (vaultBalance || 0)) {
                                             console.log('✅ Withdraw detected via periodic check!');
-                                            
+
                                             if (balanceCheckInterval) clearInterval(balanceCheckInterval);
                                             clearInterval(withdrawCountdownInterval);
                                             setCountdown(0);
-                                            
-                                            // Update balances
-                                            setVaultBalance(currentVaultBalanceNum);
+
+                                            // Update balances with retry logic
+                                            setWithdrawStatus('Withdraw successful! Updating balances...');
                                             const usdc = new Contract(USDC_ADDRESS, USDC_ABI, provider);
-                                            if (typeof usdc.balanceOf === 'function') {
-                                                const balance = await usdc.balanceOf(address);
-                                                const newUsdcBalance = Number(formatUnits(balance, 6));
-                                                console.log('Updated USDC balance:', newUsdcBalance);
-                                                setUsdcBalance(newUsdcBalance);
+                                            try {
+                                                await refreshBalancesWithRetry(vault, usdc, address, usdcBalance || 0, amountToWithdraw, 5, 2000);
+                                            } catch (balanceErr) {
+                                                console.error('Balance refresh error:', balanceErr);
+                                                // Fallback to direct update
+                                                setVaultBalance(currentVaultBalanceNum);
+                                                if (typeof usdc.balanceOf === 'function') {
+                                                    const balance = await usdc.balanceOf(address);
+                                                    setUsdcBalance(Number(formatUnits(balance, 6)));
+                                                }
                                             }
-                                            
+
                                             setWithdrawSuccess(true);
                                             setWithdrawStatus('Withdraw successful!');
                                             setWithdrawLoading(false);
-                                            
+
                                             setTimeout(() => {
                                                 setWithdrawStatus(null);
                                             }, 5000);
@@ -201,14 +262,19 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                                 console.log('Vault balance after timeout:', newVaultBalanceNum, 'Previous:', vaultBalance);
                                 if (newVaultBalanceNum < (vaultBalance || 0)) {
                                     console.log('Withdraw succeeded despite timeout!');
-                                    setVaultBalance(newVaultBalanceNum);
-                                    // Update USDC balance
+                                    // Update balances with retry logic
+                                    setWithdrawStatus('Withdraw successful! Updating balances...');
                                     const usdc = new Contract(USDC_ADDRESS, USDC_ABI, provider);
-                                    if (typeof usdc.balanceOf === 'function') {
-                                        const balance = await usdc.balanceOf(address);
-                                        const newUsdcBalance = Number(formatUnits(balance, 6));
-                                        console.log('Updated USDC balance:', newUsdcBalance);
-                                        setUsdcBalance(newUsdcBalance);
+                                    try {
+                                        await refreshBalancesWithRetry(vault, usdc, address, usdcBalance || 0, amountToWithdraw, 5, 2000);
+                                    } catch (balanceErr) {
+                                        console.error('Balance refresh error:', balanceErr);
+                                        // Fallback to direct update
+                                        setVaultBalance(newVaultBalanceNum);
+                                        if (typeof usdc.balanceOf === 'function') {
+                                            const balance = await usdc.balanceOf(address);
+                                            setUsdcBalance(Number(formatUnits(balance, 6)));
+                                        }
                                     }
                                     setWithdrawSuccess(true);
                                     setWithdrawStatus('Withdraw successful!');
@@ -282,23 +348,18 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                         });
                         
                         setWithdrawSuccess(true);
-                        setWithdrawStatus('Withdraw successful!');
+                        setWithdrawStatus('Withdraw successful! Updating balances...');
                         console.log('Withdraw status set to successful');
-                        // Update vault balance
-                        if (typeof vault.balanceOf === 'function') {
-                            const newVaultBalance = await vault.balanceOf(address);
-                            const newVaultBalanceNum = Number(formatUnits(newVaultBalance, 6));
-                            console.log('Updated vault balance:', newVaultBalanceNum);
-                            setVaultBalance(newVaultBalanceNum);
-                        }
-                        // Update USDC balance
+                        // Update balances with retry logic
                         const usdc = new Contract(USDC_ADDRESS, USDC_ABI, provider);
-                        if (typeof usdc.balanceOf === 'function') {
-                            const balance = await usdc.balanceOf(address);
-                            const newUsdcBalance = Number(formatUnits(balance, 6));
-                            console.log('Updated USDC balance:', newUsdcBalance);
-                            setUsdcBalance(newUsdcBalance);
+                        try {
+                            await refreshBalancesWithRetry(vault, usdc, address, usdcBalance || 0, amountToWithdraw, 5, 2000);
+                            setWithdrawStatus('Withdraw successful!');
+                        } catch (balanceErr) {
+                            console.error('Balance refresh error:', balanceErr);
+                            setWithdrawStatus('Withdraw successful! (Balances may take a moment to update)');
                         }
+                        // Reset status after 5 seconds
                         setTimeout(() => {
                             console.log('Clearing withdraw status after timeout');
                             setWithdrawStatus(null);
@@ -316,6 +377,8 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
             }
         } catch (err: any) {
             let errorMsg = 'Withdraw failed';
+            // Debugging info
+            console.error('Withdraw error:', err);
             if (err) {
                 if (typeof err === 'string') {
                     errorMsg = err;
@@ -338,10 +401,34 @@ export default function Withdraw({ vaultBalance, setVaultBalance, usdcBalance, s
                     }
                 }
             }
+            // Error classification: insufficient funds for gas
+            if (errorMsg.includes('insufficient funds for gas') || errorMsg.includes('insufficient funds')) {
+                errorMsg = 'Your wallet does not have enough ETH on Base to pay for gas. Please fund your wallet and try again.';
+            }
+            // Error classification: contract revert
+            if (errorMsg.includes('missing revert data') || errorMsg.includes('CALL_EXCEPTION')) {
+                errorMsg = 'Withdraw failed: The contract reverted. Please check your balance and try again.';
+            }
+            // Error classification: RPC sync delay
+            if (errorMsg.includes('transaction execution reverted') || errorMsg.includes('transaction failed')) {
+                errorMsg = 'Withdraw failed. This may be due to RPC sync delays. Please wait 15 seconds and try again.';
+            }
+            setWithdrawError(errorMsg);
             setWithdrawStatus(errorMsg);
         } finally {
             setWithdrawLoading(false);
+            setWithdrawAmount(0);
             setCountdown(0);
+        }
+        } catch (topLevelError: any) {
+            // This is the nuclear option - catch ANY error that escaped inner handlers
+            console.error('🚨 Top-level error handler caught error:', topLevelError);
+            const errorMsg = topLevelError?.message || topLevelError?.reason || 'An unexpected error occurred';
+            setWithdrawError('Withdraw failed. Please try again. ' + errorMsg);
+            setWithdrawStatus('Withdraw failed.');
+            setWithdrawLoading(false);
+            setCountdown(0);
+            // Do NOT re-throw - this ensures the Promise resolves, not rejects
         }
     }
 
