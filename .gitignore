@@ -11,3 +11,4 @@
 .env.local
 .env.development
 .env.production
+tsconfig.tsbuildinfo
