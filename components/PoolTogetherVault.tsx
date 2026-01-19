@@ -67,6 +67,9 @@ export default function PoolTogetherVault() {
 	const [withdrawCountdownMax, setWithdrawCountdownMax] = useState<number>(30);
 	const [withdrawAmount, setWithdrawAmount] = useState<number>(0);
 
+	// Address copy state
+	const [copied, setCopied] = useState(false);
+
 	//useMemo provider and vault to debounce requests on component re-render
 	const provider = useMemo(
 	  () => new JsonRpcProvider('https://mainnet.base.org'),
@@ -1229,6 +1232,17 @@ export default function PoolTogetherVault() {
 		}
 	}
 
+	function truncateAddress(address: string): string {
+		return `${address.slice(0, 6)}...${address.slice(-4)}`;
+	}
+
+	async function copyAddressToClipboard() {
+		if (walletAddress) {
+			await navigator.clipboard.writeText(walletAddress);
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		}
+	}
 
 	return (
 		<div className={`${styles.vaultWidget} vaultWidget`}>
@@ -1534,7 +1548,31 @@ export default function PoolTogetherVault() {
 					<li>All deposits on BASE chain</li>
 					<li>Your ETH balance on Base: {ethBalance === null ? 'Loading...' : ethBalance.toFixed(8)}</li>
 					<li>Wallet Address: {walletAddress
-						? walletAddress
+						? (
+							<span
+								onClick={copyAddressToClipboard}
+								style={{ cursor: 'pointer' }}
+								title={`Click to copy: ${walletAddress}`}
+							>
+								{truncateAddress(walletAddress)}
+								{copied ? (
+									<span style={{ marginLeft: '0.5em', color: '#4CAF50' }}>Copied!</span>
+								) : (
+									<svg
+										width="14"
+										height="14"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="2"
+										style={{ marginLeft: '0.5em', verticalAlign: 'middle' }}
+									>
+										<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+										<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+									</svg>
+								)}
+							</span>
+						)
 						: wallets && wallets.length === 0
 							? 'No wallet connected'
 							: 'Loading...'}
