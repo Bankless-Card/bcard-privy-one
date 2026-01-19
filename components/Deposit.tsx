@@ -194,8 +194,8 @@ export default function Deposit() {
 		ownerAddress: string,
 		spenderAddress: string,
 		requiredAmount: bigint,
-		maxRetries: number = 5,
-		delayMs: number = 2000
+		maxRetries: number = 8,
+		delayMs: number = 3000
 	): Promise<void> {
 		for (let attempt = 1; attempt <= maxRetries; attempt++) {
 			const currentAllowance = await usdcContract.allowance(ownerAddress, spenderAddress);
@@ -207,6 +207,9 @@ export default function Deposit() {
 
 			if (currentAllowance >= requiredAmount) {
 				console.log('✅ Allowance verified successfully');
+				// Add one final delay to ensure the state is fully propagated
+				console.log('⏳ Final safety delay before deposit...');
+				await new Promise(resolve => setTimeout(resolve, 2000));
 				return;
 			}
 
@@ -217,7 +220,7 @@ export default function Deposit() {
 		}
 
 		throw new Error(
-			'Allowance verification failed after approval. The approval succeeded on-chain, but RPC nodes are not synced yet. Please wait 10 seconds and try depositing again (approval is already done, so it will skip to deposit).'
+			'Allowance verification failed after approval. The approval succeeded on-chain, but RPC nodes are not synced yet. Please wait 15 seconds and try depositing again (approval is already done, so it will skip to deposit).'
 		);
 	}
 
@@ -274,12 +277,14 @@ export default function Deposit() {
 	}
 
 	async function handleDeposit(depositAmount?: number) {
-		setDepositLoading(true);
-		setDepositError(null);
-		setDepositSuccess(false);
-		setDepositStatus('Depositing...');
-		setDepositAmount(depositAmount);
-		setCountdown(0);
+		// Wrap everything in try-catch to ensure NO errors escape to Next.js error boundary
+		try {
+			setDepositLoading(true);
+			setDepositError(null);
+			setDepositSuccess(false);
+			setDepositStatus('Depositing...');
+			setDepositAmount(depositAmount);
+			setCountdown(0);
 		try {
 			const wallet = wallets && wallets.length > 0 ? wallets[0] : null;
 			if (!wallet) throw new Error('No wallet found');
@@ -730,8 +735,28 @@ export default function Deposit() {
 							);
 						}
 						console.log('⏳ Waiting for deposit tx confirmation...');
-						const receipt = await depositTx.wait();
-						
+						let receipt;
+						try {
+							receipt = await depositTx.wait();
+						} catch (waitError: any) {
+							console.error('❌ Deposit transaction failed:', waitError);
+							setCountdown(0);
+							setDepositLoading(false);
+
+							// Check if it's a revert
+							if (waitError.receipt && waitError.receipt.status === 0) {
+								setDepositError('Deposit transaction reverted. This may be due to RPC synchronization delays. The approval is complete - please wait 15 seconds and try depositing again (it will skip the approval step).');
+								setDepositStatus('Deposit failed. Please try again.');
+								return;
+							}
+
+							// Handle other errors
+							const errorMsg = waitError.message || waitError.reason || 'Deposit transaction failed';
+							setDepositError(errorMsg);
+							setDepositStatus('Deposit transaction failed.');
+							return;
+						}
+
 						// Log detailed receipt metadata
 						console.log('✅ Deposit Transaction Confirmed:', {
 							transactionHash: receipt.hash,
@@ -768,8 +793,12 @@ export default function Deposit() {
 				} catch (depositErr) {
 					console.error('Deposit transaction error:', depositErr);
 					setCountdown(0);
-					setDepositStatus('Deposit transaction failed or rejected.');
-					throw depositErr;
+					setDepositLoading(false);
+
+					const errorMsg = (depositErr as any).message || 'Deposit transaction failed or rejected.';
+					setDepositError(errorMsg);
+					setDepositStatus(errorMsg);
+					return;
 				}
 			} else {
 				throw new Error('Vault deposit method not available');
@@ -808,6 +837,10 @@ export default function Deposit() {
 			if (errorMsg.includes('missing revert data') || errorMsg.includes('CALL_EXCEPTION')) {
 				errorMsg = 'Deposit failed: The contract reverted without a message. Please check your USDC balance, approval, and try again. If the problem persists, contact support.';
 			}
+			// Handle transaction execution reverted
+			if (errorMsg.includes('transaction execution reverted') || errorMsg.includes('transaction failed')) {
+				errorMsg = 'Deposit transaction failed. This may be due to insufficient allowance or RPC sync delays. Please wait 15 seconds and try again.';
+			}
 			setDepositError(errorMsg);
 			setDepositStatus(errorMsg);
 		} finally {
@@ -815,17 +848,18 @@ export default function Deposit() {
 			setDepositAmount(0);
 			setCountdown(0);
 		}
+		} catch (topLevelError: any) {
+			// This is the nuclear option - catch ANY error that escaped inner handlers
+			console.error('🚨 Top-level error handler caught error:', topLevelError);
+			const errorMsg = topLevelError?.message || topLevelError?.reason || 'An unexpected error occurred';
+			setDepositError('Deposit failed. Please try again. ' + errorMsg);
+			setDepositStatus('Deposit failed.');
+			setDepositLoading(false);
+			setCountdown(0);
+			// Do NOT re-throw - this ensures the Promise resolves, not rejects
+		}
 	}
 
-
-	async function newHandleDeposit(amount: number) {
-		setDepositLoading(true);
-		setDepositError(null);
-
-		
-
-		setDepositLoading(false);		
-	}
 
 	return (
 		<div className={`${styles.vaultWidget} vaultWidget`}>
@@ -846,8 +880,11 @@ export default function Deposit() {
 				<div className={`${styles.vaultButtons} vaultButtons`}>
 					{/* Always show $1 button if balance >= $1 */}
 					{usdcBalance >= 1 && (
-						<button 
-							onClick={() => handleDeposit(1)} 
+						<button
+							onClick={() => handleDeposit(1).catch(err => {
+								// Error already handled in handleDeposit, this just prevents unhandled promise rejection
+								console.error('Deposit error caught at handler level:', err);
+							})}
 							disabled={depositLoading || approvalLoading}
 							style={{ 
 								display: 'flex', 
@@ -877,8 +914,11 @@ export default function Deposit() {
 					
 					{/* Show $5 button if balance >= $5 */}
 					{usdcBalance >= 5 && (
-						<button 
-							onClick={() => handleDeposit(5)} 
+						<button
+							onClick={() => handleDeposit(5).catch(err => {
+								// Error already handled in handleDeposit, this just prevents unhandled promise rejection
+								console.error('Deposit error caught at handler level:', err);
+							})}
 							disabled={depositLoading || approvalLoading}
 							style={{ 
 								display: 'flex', 
@@ -908,8 +948,11 @@ export default function Deposit() {
 					
 					{/* Show $20 button if balance >= $20 */}
 					{usdcBalance >= 20 && (
-						<button 
-							onClick={() => handleDeposit(20)} 
+						<button
+							onClick={() => handleDeposit(20).catch(err => {
+								// Error already handled in handleDeposit, this just prevents unhandled promise rejection
+								console.error('Deposit error caught at handler level:', err);
+							})}
 							disabled={depositLoading || approvalLoading}
 							style={{ 
 								display: 'flex', 
