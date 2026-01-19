@@ -4,7 +4,6 @@ import LandingNavbar from './LandingNavbar';
 import MarkdownWithReactComponentRenderer from './MarkdownWithReactComponentRenderer';
 import Footer from './Footer';
 import Header from './Header';
-import Deposit from './Deposit';
 
 export default function LandingPage({ mainContent, sidebarContent, hash }: { mainContent: string, sidebarContent: string, hash: string }) {
   return (
